@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#e9eae7">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="塞伯坦翻译器">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+    <title>塞伯坦翻译器</title>
+    <link rel="stylesheet" href="./styles.css?v=6">
+  </head>
+  <body>
+    <div class="cosmic-backdrop" aria-hidden="true"></div>
+    <main class="app-shell">
+      <header class="product-header">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">
+            <img id="brand-glyph" src="./assets/autobot-logo.png" alt="">
+          </span>
+          <div>
+            <h1>塞伯坦翻译器</h1>
+          </div>
+        </div>
+      </header>
+
+      <section class="translator-workspace" id="translator-workspace" aria-label="英文到塞伯坦文翻译工作区">
+        <div class="armor-detail armor-detail-top" aria-hidden="true"></div>
+        <div class="armor-detail armor-detail-bottom" aria-hidden="true"></div>
+        <header class="language-bar">
+          <div class="language-name source-language" id="source-language">
+            <span class="language-code" id="source-language-code" aria-hidden="true">EN</span>
+            <strong id="source-language-label">英文</strong>
+          </div>
+          <button class="language-direction" id="direction-button" type="button" aria-label="切换为塞伯坦文转英文" title="切换翻译方向">
+            <span id="direction-icon" aria-hidden="true">
+              <svg class="direction-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="m16 3 4 4-4 4"></path>
+                <path d="M20 7H4"></path>
+                <path d="m8 21-4-4 4-4"></path>
+                <path d="M4 17h16"></path>
+              </svg>
+            </span>
+          </button>
+          <div class="language-name target-language" id="target-language">
+            <span class="language-code" id="target-language-code" aria-hidden="true">CY</span>
+            <strong id="target-family-label">汽车人字形</strong>
+            <fieldset class="alphabet-selector" id="alphabet-selector">
+              <legend class="sr-only">选择塞伯坦字母体系</legend>
+            </fieldset>
+            <span id="glyph-count">0 个字形</span>
+          </div>
+        </header>
+
+        <div class="translation-surfaces">
+          <section class="source-pane" aria-labelledby="source-language">
+            <label class="sr-only" id="source-input-label" for="source-input">输入英文文本</label>
+            <textarea id="source-input" spellcheck="false" placeholder="输入英文" aria-describedby="input-help"></textarea>
+            <div id="recognition-panel" class="recognition-panel" hidden>
+              <input id="recognition-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+              <label class="recognition-dropzone" for="recognition-input">
+                <span class="recognition-icon" aria-hidden="true">＋</span>
+                <strong>上传塞伯坦文字图片</strong>
+                <span>支持拖放或粘贴图片，浏览器本地识别</span>
+              </label>
+              <p id="recognition-status" class="recognition-status" role="status" aria-live="polite">等待图片</p>
+              <canvas id="recognition-preview" class="recognition-preview" aria-label="待识别图片预览" hidden></canvas>
+            </div>
+            <span class="sr-only" id="input-help">可切换翻译方向，标点、空格与换行保持原顺序</span>
+            <output id="character-count" for="source-input">0 字符</output>
+          </section>
+
+          <section class="target-pane" aria-labelledby="target-language">
+            <div id="output" class="output-stage" aria-live="polite" aria-label="汽车人字形输出">
+              <p class="empty-output">译文</p>
+            </div>
+          </section>
+        </div>
+
+        <footer class="action-bar" aria-label="翻译操作">
+          <div class="action-group source-actions">
+            <button class="button button-quiet" id="sample-button" type="button">
+              <span class="button-icon-wrap" id="sample-action-icon" aria-hidden="true">
+                <svg class="button-icon" data-icon="lightbulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                  <path d="M9 18h6"></path>
+                  <path d="M10 22h4"></path>
+                  <path d="M15.09 14c.18-.69.66-1.23 1.1-1.79a6 6 0 1 0-8.38 0c.44.56.92 1.1 1.1 1.79"></path>
+                  <path d="M9 14h6"></path>
+                </svg>
+                <svg class="button-icon" data-icon="upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false" hidden>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <path d="m17 8-5-5-5 5"></path>
+                  <path d="M12 3v12"></path>
+                </svg>
+              </span>
+              <span class="button-label" id="sample-action-label">示例</span>
+            </button>
+            <button class="button button-quiet" id="clear-button" type="button">
+              <span class="button-icon-wrap" aria-hidden="true">
+                <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" focusable="false">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </span>
+              <span class="button-label">清空</span>
+            </button>
+          </div>
+
+          <div class="size-control">
+            <label for="target-size">字号</label>
+            <input id="target-size" type="range" min="16" max="52" step="1" value="28" aria-describedby="target-size-value">
+            <output id="target-size-value" for="target-size">28 px</output>
+          </div>
+
+          <div class="action-group target-actions">
+            <button class="button button-quiet" id="reference-button" type="button" aria-haspopup="dialog">
+              <span class="button-icon-wrap" aria-hidden="true">
+                <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                  <path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"></path>
+                  <path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+              </span>
+              <span class="button-label">A-Z 字表</span>
+            </button>
+            <button class="button button-primary" id="export-button" type="button">
+              <span class="button-icon-wrap" id="primary-action-icon" aria-hidden="true">
+                <svg class="button-icon" data-icon="download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <path d="M7 10 12 15 17 10"></path>
+                  <path d="M12 15V3"></path>
+                </svg>
+                <svg class="button-icon" data-icon="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false" hidden>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <path d="M14 2v6h6"></path>
+                  <path d="m8 15 2.25 2.25L16 11.5"></path>
+                </svg>
+              </span>
+              <span class="button-label" id="primary-action-label">导出图片</span>
+            </button>
+          </div>
+        </footer>
+      </section>
+
+    </main>
+
+    <dialog id="reference-dialog" aria-labelledby="reference-title">
+      <div class="dialog-heading">
+        <h2 id="reference-title">汽车人字表</h2>
+        <button class="icon-button" id="close-reference" type="button" aria-label="关闭汽车人字表" title="关闭">
+          <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" focusable="false" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="reference-grid" class="reference-grid"></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js?v=3"></script>
+  </body>
+</html>
