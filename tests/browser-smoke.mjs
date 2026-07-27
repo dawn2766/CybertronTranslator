@@ -9,7 +9,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const EDGE_PATH = String.raw`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`;
-const APP_DIRECTORY = fileURLToPath(new URL('../app/', import.meta.url));
+const APP_DIRECTORY = fileURLToPath(new URL('../', import.meta.url));
+const ASSET_DIRECTORY = path.join(APP_DIRECTORY, 'app', 'assets');
 const ARTIFACT_DIRECTORY = path.join(os.tmpdir(), 'cybertron-browser-smoke');
 const DOWNLOAD_DIR = path.join(ARTIFACT_DIRECTORY, 'downloads');
 const DOWNLOAD_NAME = 'cybertron-decepticon.png';
@@ -483,13 +484,13 @@ async function runSmoke() {
   const glyphHashes = [];
   for (const family of ['autobot', 'decepticon']) {
     for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
-      const contents = await readFile(path.join(APP_DIRECTORY, 'assets', 'glyphs', family, `${letter}.png`));
+      const contents = await readFile(path.join(ASSET_DIRECTORY, 'glyphs', family, `${letter}.png`));
       glyphHashes.push(createHash('sha256').update(contents).digest('hex'));
     }
   }
   assert.equal(new Set(glyphHashes).size, 52, 'All 52 glyph PNG hashes must be unique');
   const fontFiles = await Promise.all(['autobot', 'decepticon'].map(async (family) => {
-    const filePath = path.join(APP_DIRECTORY, 'assets', 'fonts', `cybertron-${family}.woff2`);
+    const filePath = path.join(ASSET_DIRECTORY, 'fonts', `cybertron-${family}.woff2`);
     const contents = await readFile(filePath);
     assert.equal(contents.subarray(0, 4).toString('ascii'), 'wOF2');
     return { family, bytes: contents.length, hash: createHash('sha256').update(contents).digest('hex') };
@@ -711,7 +712,7 @@ async function runSmoke() {
         panel.setAttribute('aria-label', label);
         for (const letter of ['A', 'M', 'Z']) {
           const image = document.createElement('img');
-          image.src = './assets/glyphs/autobot/' + letter + '.png';
+            image.src = './app/assets/glyphs/autobot/' + letter + '.png';
           image.alt = letter;
           image.style.cssText = 'width:auto;height:92px;object-fit:contain';
           panel.append(image);
@@ -852,7 +853,7 @@ async function runSmoke() {
       const coverage = {};
       for (const family of ['autobot', 'decepticon']) {
         const image = new Image();
-        image.src = \`./assets/\${family}-logo.png\`;
+          image.src = \`./app/assets/\${family}-logo.png\`;
         await image.decode();
         const canvas = document.createElement('canvas');
         canvas.width = image.naturalWidth;
@@ -879,7 +880,7 @@ async function runSmoke() {
     assert.ok(factionLogos.coverage.autobot > 0.2, 'Autobot logo must contain visible subject pixels');
     assert.ok(factionLogos.coverage.decepticon > 0.2, 'Decepticon logo must contain visible subject pixels');
     assert.equal(factionLogos.alphabet, 'decepticon');
-    assert.equal(factionLogos.brandSource, './assets/decepticon-logo.png');
+      assert.match(factionLogos.brandSource, /\/app\/assets\/decepticon-logo\.png$/);
     assert.match(factionLogos.watermarkImage, /decepticon-logo\.png/);
     assert.match(factionLogos.referenceLogo, /decepticon-logo\.png/);
     assert.match(factionLogos.referenceBorder, /143, 83, 196/);

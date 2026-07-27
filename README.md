@@ -5,9 +5,10 @@
 ## 目录结构
 
 ```text
-app/                    PWA 源代码
+index.html              PWA 根入口
+app/                    JavaScript、CSS 与运行素材
 	assets/               字体、字形和界面图片
-	public/icons/         固定路径的 PWA 与 Apple 安装图标
+public/icons/           固定路径的 PWA 与 Apple 安装图标
 tests/                  单元测试与浏览器烟雾测试
 .github/workflows/      GitHub Pages 自动部署
 dist/                   本地构建产物（不提交）

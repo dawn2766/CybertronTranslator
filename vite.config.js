@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  root: 'app',
   base: './',
   plugins: [
     VitePWA({
@@ -53,7 +52,7 @@ export default defineConfig({
     }),
   ],
   build: {
-    outDir: '../dist',
+    outDir: 'dist',
     emptyOutDir: true,
     assetsInlineLimit: 0,
   },

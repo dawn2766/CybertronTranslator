@@ -14,7 +14,7 @@ const staticAssetUrls = typeof import.meta.glob === 'function'
   : {};
 
 function resolveAssetUrl(path) {
-  return staticAssetUrls[path] ?? path;
+  return staticAssetUrls[path] ?? new URL(path, import.meta.url).href;
 }
 
 const input = document.querySelector('#source-input');
