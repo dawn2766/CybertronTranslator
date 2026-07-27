@@ -6,12 +6,15 @@ import {
 } from './translator.js';
 import { embedCybertronPayload, recognizeCybertronFile } from './recognizer.js';
 
-const staticAssetUrls = typeof import.meta.glob === 'function'
-  ? import.meta.glob(
+let staticAssetUrls = {};
+try {
+  staticAssetUrls = import.meta.glob(
     ['./assets/*-logo.png', './assets/glyphs/{autobot,decepticon}/*.png'],
     { eager: true, query: '?url', import: 'default' },
-  )
-  : {};
+  );
+} catch {
+  // Raw-source browser tests do not provide Vite's import.meta.glob transform.
+}
 
 function resolveAssetUrl(path) {
   return staticAssetUrls[path] ?? new URL(path, import.meta.url).href;
@@ -79,7 +82,7 @@ function renderAlphabetSelector() {
     radio.value = alphabet.id;
     radio.checked = alphabet.id === currentAlphabetId;
     const logo = document.createElement('img');
-    logo.src = `./assets/${alphabet.id}-logo.png`;
+    logo.src = resolveAssetUrl(`./assets/${alphabet.id}-logo.png`);
     logo.alt = '';
     const text = document.createElement('span');
     text.textContent = alphabet.zhLabel;
