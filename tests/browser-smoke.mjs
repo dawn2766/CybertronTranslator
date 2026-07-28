@@ -382,7 +382,12 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
     const sourceWatermarkStyle = getComputedStyle(document.querySelector('.source-pane'), '::before');
     const brandMarkRect = document.querySelector('.brand-mark').getBoundingClientRect();
     const brandImageRect = document.querySelector('#brand-glyph').getBoundingClientRect();
-    const parseRgb = (color) => color.match(/[0-9]+(?:\.[0-9]+)?/g)?.slice(0, 3).map(Number) ?? [];
+    const parseRgb = (color) => {
+      if (/^#[0-9a-f]{6}$/i.test(color)) {
+        return [1, 3, 5].map((offset) => Number.parseInt(color.slice(offset, offset + 2), 16));
+      }
+      return color.match(/[0-9]+(?:\.[0-9]+)?/g)?.slice(0, 3).map(Number) ?? [];
+    };
     const luminance = (color) => {
       const channels = parseRgb(color).map((channel) => {
         const value = channel / 255;
@@ -392,7 +397,8 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
     };
     const primaryBackgroundLuminance = luminance(primaryStyle.backgroundColor);
     const primaryColorLuminance = luminance(primaryStyle.color);
-    const primaryChannels = parseRgb(primaryStyle.backgroundColor);
+    const factionSignal = getComputedStyle(document.documentElement)
+      .getPropertyValue('--signal').trim();
     return {
       requested: { width: ${width}, height: ${height}, mobile: ${mobile} },
       innerWidth,
@@ -422,8 +428,7 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
         primaryColor: primaryStyle.color,
         primaryContrast: (Math.max(primaryBackgroundLuminance, primaryColorLuminance) + 0.05)
           / (Math.min(primaryBackgroundLuminance, primaryColorLuminance) + 0.05),
-        primaryNonBlue: primaryChannels.length === 3 && primaryChannels[0] > primaryChannels[2]
-          && primaryChannels[0] > primaryChannels[1],
+        primaryMatchesFaction: primaryStyle.backgroundColor === 'rgb(' + parseRgb(factionSignal).join(', ') + ')',
         sampleClipPath: sampleStyle.clipPath,
         sampleBeforeDisplay: sampleBeforeStyle.display,
         sampleAfterDisplay: sampleAfterStyle.display,
@@ -987,7 +992,7 @@ async function runSmoke() {
       slider.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText' }));
       document.querySelector('#sample-button').click();
     })()`);
-    const sampleSource = '“Hello,” we\'re here.';
+    const sampleSource = 'Peace through tyranny!\nDecepticons, transform and rise up!';
     const exportSource = '“Hello,” we\'re\nhere.';
     const sizeEvidence = [];
     for (const size of [16, 28, 52]) {
@@ -1057,12 +1062,12 @@ async function runSmoke() {
 
     const sample = sizeEvidence[1];
     assert.equal(sample.value, sampleSource);
-    assert.equal(sample.glyphs, 13);
+    assert.equal(sample.glyphs, 48);
     assert.equal(sample.reconstructed, sampleSource);
-    assert.equal(sample.literalOrder, '“,”\'.');
+    assert.equal(sample.literalOrder, '!,!');
     assert.equal(sample.unsupported, 0);
     assert.deepEqual(sample.warningCopy, []);
-    const expectedPlacements = ['top', 'baseline', 'top', 'top', 'baseline'];
+    const expectedPlacements = ['baseline', 'baseline', 'baseline'];
     assert.deepEqual(sample.literalMetrics.map((literal) => literal.placement), expectedPlacements);
     assert.ok(sample.literalMetrics.every((literal) => literal.className.includes(`literal-${literal.placement}`)));
     assert.ok(sample.literalMetrics.every((literal) => literal.backgroundColor === 'rgba(0, 0, 0, 0)'
@@ -1174,10 +1179,13 @@ async function runSmoke() {
     assert.equal(exportLayout.layout.lineHeight, 68);
     assert.equal(exportLayout.layout.background, '#fdfdfb');
     assert.equal(exportLayout.layout.recognitionMarker, 'CYIMG1');
-    assert.equal(exportLayout.layout.entries.filter((entry) => entry.type === 'glyph').length, sample.glyphs);
+    assert.equal(exportLayout.layout.entries.filter((entry) => entry.type === 'glyph').length, 13);
     const exportedLiterals = exportLayout.layout.entries.filter((entry) => entry.type === 'literal');
     assert.equal(exportedLiterals.map((entry) => entry.value).join(''), '“,”\'.');
-    assert.deepEqual(exportedLiterals.map((entry) => entry.placement), expectedPlacements);
+    assert.deepEqual(
+      exportedLiterals.map((entry) => entry.placement),
+      ['top', 'baseline', 'top', 'top', 'baseline'],
+    );
     assert.deepEqual(
       exportLayout.fillText,
       [...exportSource].filter((character) => character !== ' ' && character !== '\n'),
@@ -1390,6 +1398,10 @@ async function runSmoke() {
       slider.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText' }));
       document.querySelector('#sample-button').click();
     })()`);
+    await waitUntil(
+      () => evaluate(cdp, sessionId, `!document.querySelector('#toast').classList.contains('is-visible')`),
+      'toast to clear before README screenshots',
+    );
     const desktop = await collectLayout(cdp, sessionId, 1440, 900, false);
     const desktopScreenshot = await captureScreenshot(cdp, sessionId, DESKTOP_SCREENSHOT, {
       x: 0, y: 0, width: 1440, height: 900,
@@ -1414,7 +1426,7 @@ async function runSmoke() {
       assert.equal(metrics.visualSystem.watermarkPosition, '50% 50%', `Faction watermark must be centered at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.equal(metrics.visualSystem.brandContained, true, `Brand logo must remain inside its frame at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.equal(metrics.workspace.targetNearWhite, true, `Target must be near-white at ${metrics.requested.width}x${metrics.requested.height}`);
-      assert.equal(metrics.visualSystem.primaryNonBlue, true, `Primary action must be signal red, not blue, at ${metrics.requested.width}x${metrics.requested.height}`);
+      assert.equal(metrics.visualSystem.primaryMatchesFaction, true, `Primary action must match the faction accent at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.ok(metrics.visualSystem.primaryContrast >= 4.5, `Primary action contrast must be >= 4.5 at ${metrics.requested.width}x${metrics.requested.height}`);
     }
     assert.ok(desktop.scrollHeight <= desktop.innerHeight, 'Page must fit within a 1440x900 desktop viewport');
