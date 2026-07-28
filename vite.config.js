@@ -23,7 +23,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'any',
         background_color: '#07090b',
-        theme_color: '#07090b',
+        theme_color: '#000000',
         categories: ['utilities', 'education'],
         icons: [
           {

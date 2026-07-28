@@ -578,6 +578,12 @@ html {
   scrollbar-color: #68747a #0a0d0f;
 }
 
+@media (display-mode: standalone) {
+  html {
+    background: #000;
+  }
+}
+
 body {
   position: relative;
   isolation: isolate;
