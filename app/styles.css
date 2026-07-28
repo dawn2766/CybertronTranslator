@@ -570,23 +570,20 @@ dialog::backdrop { background: rgba(17, 19, 19, 0.62); }
   --local: #55d896;
   --focus: #59eee5;
   --steel: #a7b0b4;
+  --system-chrome: #11181d;
   font-family: "Bahnschrift", "Microsoft YaHei UI", sans-serif;
 }
 
 html {
-  background: var(--page);
+  background: var(--system-chrome);
   scrollbar-color: #68747a #0a0d0f;
-}
-
-@media (display-mode: standalone) {
-  html {
-    background: #000;
-  }
 }
 
 body {
   position: relative;
   isolation: isolate;
+  padding-top: 0;
+  border-top: env(safe-area-inset-top) solid var(--system-chrome);
   color: #eaf0f1;
   background:
     linear-gradient(115deg, rgba(5, 7, 9, 0.72) 0%, rgba(5, 8, 10, 0.38) 42%, rgba(11, 14, 16, 0.62) 100%),
