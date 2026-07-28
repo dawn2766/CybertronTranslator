@@ -1,7 +1,7 @@
 <div align="center">
-	<img src="./app/assets/autobot-logo.png" width="76" alt="汽车人徽标">
-	&nbsp;&nbsp;&nbsp;
 	<img src="./app/assets/decepticon-logo.png" width="76" alt="霸天虎徽标">
+	&nbsp;&nbsp;&nbsp;
+	<img src="./app/assets/autobot-logo.png" width="76" alt="汽车人徽标">
 
 # 塞伯坦译码器
 
@@ -26,6 +26,78 @@
 
 因此，这里的“翻译”更准确地说是**按字母映射进行字形转换**，而不是把英文翻译成另一种有独立语法和词汇的语言。项目所用字体是为网页显示、图片导出和本地识别整理的实现，并不代表官方统一的塞伯坦文字规范。
 
+## 字母对照表
+
+**A–M** · 第一行霸天虎，第二行汽车人
+
+<table align="center">
+	<tr>
+		<td align="center" bgcolor="#ffffff"><strong>A</strong><br><img src="./app/assets/glyphs/decepticon/A.png" height="32" alt="霸天虎字形 A"></td>
+		<td align="center" bgcolor="#ffffff"><strong>B</strong><br><img src="./app/assets/glyphs/decepticon/B.png" height="32" alt="霸天虎字形 B"></td>
+		<td align="center" bgcolor="#ffffff"><strong>C</strong><br><img src="./app/assets/glyphs/decepticon/C.png" height="32" alt="霸天虎字形 C"></td>
+		<td align="center" bgcolor="#ffffff"><strong>D</strong><br><img src="./app/assets/glyphs/decepticon/D.png" height="32" alt="霸天虎字形 D"></td>
+		<td align="center" bgcolor="#ffffff"><strong>E</strong><br><img src="./app/assets/glyphs/decepticon/E.png" height="32" alt="霸天虎字形 E"></td>
+		<td align="center" bgcolor="#ffffff"><strong>F</strong><br><img src="./app/assets/glyphs/decepticon/F.png" height="32" alt="霸天虎字形 F"></td>
+		<td align="center" bgcolor="#ffffff"><strong>G</strong><br><img src="./app/assets/glyphs/decepticon/G.png" height="32" alt="霸天虎字形 G"></td>
+		<td align="center" bgcolor="#ffffff"><strong>H</strong><br><img src="./app/assets/glyphs/decepticon/H.png" height="32" alt="霸天虎字形 H"></td>
+		<td align="center" bgcolor="#ffffff"><strong>I</strong><br><img src="./app/assets/glyphs/decepticon/I.png" height="32" alt="霸天虎字形 I"></td>
+		<td align="center" bgcolor="#ffffff"><strong>J</strong><br><img src="./app/assets/glyphs/decepticon/J.png" height="32" alt="霸天虎字形 J"></td>
+		<td align="center" bgcolor="#ffffff"><strong>K</strong><br><img src="./app/assets/glyphs/decepticon/K.png" height="32" alt="霸天虎字形 K"></td>
+		<td align="center" bgcolor="#ffffff"><strong>L</strong><br><img src="./app/assets/glyphs/decepticon/L.png" height="32" alt="霸天虎字形 L"></td>
+		<td align="center" bgcolor="#ffffff"><strong>M</strong><br><img src="./app/assets/glyphs/decepticon/M.png" height="32" alt="霸天虎字形 M"></td>
+	</tr>
+	<tr>
+		<td align="center" bgcolor="#ffffff"><strong>A</strong><br><img src="./app/assets/glyphs/autobot/A.png" height="32" alt="汽车人字形 A"></td>
+		<td align="center" bgcolor="#ffffff"><strong>B</strong><br><img src="./app/assets/glyphs/autobot/B.png" height="32" alt="汽车人字形 B"></td>
+		<td align="center" bgcolor="#ffffff"><strong>C</strong><br><img src="./app/assets/glyphs/autobot/C.png" height="32" alt="汽车人字形 C"></td>
+		<td align="center" bgcolor="#ffffff"><strong>D</strong><br><img src="./app/assets/glyphs/autobot/D.png" height="32" alt="汽车人字形 D"></td>
+		<td align="center" bgcolor="#ffffff"><strong>E</strong><br><img src="./app/assets/glyphs/autobot/E.png" height="32" alt="汽车人字形 E"></td>
+		<td align="center" bgcolor="#ffffff"><strong>F</strong><br><img src="./app/assets/glyphs/autobot/F.png" height="32" alt="汽车人字形 F"></td>
+		<td align="center" bgcolor="#ffffff"><strong>G</strong><br><img src="./app/assets/glyphs/autobot/G.png" height="32" alt="汽车人字形 G"></td>
+		<td align="center" bgcolor="#ffffff"><strong>H</strong><br><img src="./app/assets/glyphs/autobot/H.png" height="32" alt="汽车人字形 H"></td>
+		<td align="center" bgcolor="#ffffff"><strong>I</strong><br><img src="./app/assets/glyphs/autobot/I.png" height="32" alt="汽车人字形 I"></td>
+		<td align="center" bgcolor="#ffffff"><strong>J</strong><br><img src="./app/assets/glyphs/autobot/J.png" height="32" alt="汽车人字形 J"></td>
+		<td align="center" bgcolor="#ffffff"><strong>K</strong><br><img src="./app/assets/glyphs/autobot/K.png" height="32" alt="汽车人字形 K"></td>
+		<td align="center" bgcolor="#ffffff"><strong>L</strong><br><img src="./app/assets/glyphs/autobot/L.png" height="32" alt="汽车人字形 L"></td>
+		<td align="center" bgcolor="#ffffff"><strong>M</strong><br><img src="./app/assets/glyphs/autobot/M.png" height="32" alt="汽车人字形 M"></td>
+	</tr>
+</table>
+
+**N–Z** · 第一行霸天虎，第二行汽车人
+
+<table align="center">
+	<tr>
+		<td align="center" bgcolor="#ffffff"><strong>N</strong><br><img src="./app/assets/glyphs/decepticon/N.png" height="32" alt="霸天虎字形 N"></td>
+		<td align="center" bgcolor="#ffffff"><strong>O</strong><br><img src="./app/assets/glyphs/decepticon/O.png" height="32" alt="霸天虎字形 O"></td>
+		<td align="center" bgcolor="#ffffff"><strong>P</strong><br><img src="./app/assets/glyphs/decepticon/P.png" height="32" alt="霸天虎字形 P"></td>
+		<td align="center" bgcolor="#ffffff"><strong>Q</strong><br><img src="./app/assets/glyphs/decepticon/Q.png" height="32" alt="霸天虎字形 Q"></td>
+		<td align="center" bgcolor="#ffffff"><strong>R</strong><br><img src="./app/assets/glyphs/decepticon/R.png" height="32" alt="霸天虎字形 R"></td>
+		<td align="center" bgcolor="#ffffff"><strong>S</strong><br><img src="./app/assets/glyphs/decepticon/S.png" height="32" alt="霸天虎字形 S"></td>
+		<td align="center" bgcolor="#ffffff"><strong>T</strong><br><img src="./app/assets/glyphs/decepticon/T.png" height="32" alt="霸天虎字形 T"></td>
+		<td align="center" bgcolor="#ffffff"><strong>U</strong><br><img src="./app/assets/glyphs/decepticon/U.png" height="32" alt="霸天虎字形 U"></td>
+		<td align="center" bgcolor="#ffffff"><strong>V</strong><br><img src="./app/assets/glyphs/decepticon/V.png" height="32" alt="霸天虎字形 V"></td>
+		<td align="center" bgcolor="#ffffff"><strong>W</strong><br><img src="./app/assets/glyphs/decepticon/W.png" height="32" alt="霸天虎字形 W"></td>
+		<td align="center" bgcolor="#ffffff"><strong>X</strong><br><img src="./app/assets/glyphs/decepticon/X.png" height="32" alt="霸天虎字形 X"></td>
+		<td align="center" bgcolor="#ffffff"><strong>Y</strong><br><img src="./app/assets/glyphs/decepticon/Y.png" height="32" alt="霸天虎字形 Y"></td>
+		<td align="center" bgcolor="#ffffff"><strong>Z</strong><br><img src="./app/assets/glyphs/decepticon/Z.png" height="32" alt="霸天虎字形 Z"></td>
+	</tr>
+	<tr>
+		<td align="center" bgcolor="#ffffff"><strong>N</strong><br><img src="./app/assets/glyphs/autobot/N.png" height="32" alt="汽车人字形 N"></td>
+		<td align="center" bgcolor="#ffffff"><strong>O</strong><br><img src="./app/assets/glyphs/autobot/O.png" height="32" alt="汽车人字形 O"></td>
+		<td align="center" bgcolor="#ffffff"><strong>P</strong><br><img src="./app/assets/glyphs/autobot/P.png" height="32" alt="汽车人字形 P"></td>
+		<td align="center" bgcolor="#ffffff"><strong>Q</strong><br><img src="./app/assets/glyphs/autobot/Q.png" height="32" alt="汽车人字形 Q"></td>
+		<td align="center" bgcolor="#ffffff"><strong>R</strong><br><img src="./app/assets/glyphs/autobot/R.png" height="32" alt="汽车人字形 R"></td>
+		<td align="center" bgcolor="#ffffff"><strong>S</strong><br><img src="./app/assets/glyphs/autobot/S.png" height="32" alt="汽车人字形 S"></td>
+		<td align="center" bgcolor="#ffffff"><strong>T</strong><br><img src="./app/assets/glyphs/autobot/T.png" height="32" alt="汽车人字形 T"></td>
+		<td align="center" bgcolor="#ffffff"><strong>U</strong><br><img src="./app/assets/glyphs/autobot/U.png" height="32" alt="汽车人字形 U"></td>
+		<td align="center" bgcolor="#ffffff"><strong>V</strong><br><img src="./app/assets/glyphs/autobot/V.png" height="32" alt="汽车人字形 V"></td>
+		<td align="center" bgcolor="#ffffff"><strong>W</strong><br><img src="./app/assets/glyphs/autobot/W.png" height="32" alt="汽车人字形 W"></td>
+		<td align="center" bgcolor="#ffffff"><strong>X</strong><br><img src="./app/assets/glyphs/autobot/X.png" height="32" alt="汽车人字形 X"></td>
+		<td align="center" bgcolor="#ffffff"><strong>Y</strong><br><img src="./app/assets/glyphs/autobot/Y.png" height="32" alt="汽车人字形 Y"></td>
+		<td align="center" bgcolor="#ffffff"><strong>Z</strong><br><img src="./app/assets/glyphs/autobot/Z.png" height="32" alt="汽车人字形 Z"></td>
+	</tr>
+</table>
+
 ## 为什么做这个项目
 
 最初的目标只是让同好可以方便地写名字、短句或纪念文字。继续开发后，我又加入了双阵营切换、PNG 导出、图片回译和离线安装，希望它不只是一张字母对照表，而是一个真的顺手、也愿意反复打开的小工具。
@@ -34,19 +106,33 @@
 
 ## 应用一览
 
+两个方向在电脑端和手机端使用同一套响应式工作台：正向输入英文并实时生成塞伯坦字形，反向上传字形图片并在本地识别为英文。
+
 ### 电脑端
 
-宽屏下采用双栏布局：左边输入英文，右边实时生成塞伯坦字形。阵营切换、字号调整、字表查看和图片导出都集中在同一个页面中。
-
-![塞伯坦译码器电脑端界面：霸天虎标志性语段及其塞伯坦字形译文](./docs/screenshots/desktop.png)
+<table width="100%">
+	<tr>
+		<th width="50%">英文 → 塞伯坦文</th>
+		<th width="50%">塞伯坦文 → 英文</th>
+	</tr>
+	<tr>
+		<td width="50%"><img src="./docs/screenshots/desktop.png" alt="电脑端英文转塞伯坦文界面"></td>
+		<td width="50%"><img src="./docs/screenshots/reverse-desktop.png" alt="电脑端塞伯坦文图片转英文界面"></td>
+	</tr>
+</table>
 
 ### 手机端
 
-在手机上，输入区与结果区会自动改为纵向排列，阵营选择、字号调节和导出功能都会保留。安装到主屏幕后，也可以把它当作一个随时可用的小工具。
-
-<p align="center">
-	<img src="./docs/screenshots/mobile.png" width="35%" alt="塞伯坦译码器手机端界面：响应式霸天虎示例翻译工作台">
-</p>
+<table width="100%">
+	<tr>
+		<th width="50%">英文 → 塞伯坦文</th>
+		<th width="50%">塞伯坦文 → 英文</th>
+	</tr>
+	<tr>
+		<td width="50%" align="center" valign="top"><img src="./docs/screenshots/mobile.png" width="45%" alt="手机端英文转塞伯坦文界面"></td>
+		<td width="50%" align="center" valign="top"><img src="./docs/screenshots/reverse-mobile.png" width="45%" alt="手机端塞伯坦文图片转英文界面"></td>
+	</tr>
+</table>
 
 ## 能做什么
 

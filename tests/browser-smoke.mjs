@@ -15,7 +15,9 @@ const ARTIFACT_DIRECTORY = path.join(os.tmpdir(), 'cybertron-browser-smoke');
 const DOWNLOAD_DIR = path.join(ARTIFACT_DIRECTORY, 'downloads');
 const DOWNLOAD_NAME = 'cybertron-decepticon.png';
 const DESKTOP_SCREENSHOT = path.join(ARTIFACT_DIRECTORY, 'editorial-desktop-1440x900.png');
+const REVERSE_DESKTOP_SCREENSHOT = path.join(ARTIFACT_DIRECTORY, 'editorial-reverse-desktop-1440x900.png');
 const MOBILE_SCREENSHOT = path.join(ARTIFACT_DIRECTORY, 'editorial-mobile-390x844.png');
+const REVERSE_MOBILE_SCREENSHOT = path.join(ARTIFACT_DIRECTORY, 'editorial-reverse-mobile-390x844.png');
 const REFERENCE_SCREENSHOT = path.join(ARTIFACT_DIRECTORY, 'concise-reference.png');
 const TRANSPARENT_GLYPH_SCREENSHOT = path.join(ARTIFACT_DIRECTORY, 'black-transparent-glyph-check.png');
 const PNG_SIGNATURE = '89504e470d0a1a0a';
@@ -1406,10 +1408,40 @@ async function runSmoke() {
     const desktopScreenshot = await captureScreenshot(cdp, sessionId, DESKTOP_SCREENSHOT, {
       x: 0, y: 0, width: 1440, height: 900,
     });
+    await evaluate(cdp, sessionId, `(() => {
+      document.querySelector('#direction-button').click();
+      document.querySelector('#sample-button').click();
+    })()`);
+    await waitUntil(
+      () => evaluate(cdp, sessionId, `window.__lastRecognition?.rawText === 'Peace through tyranny!\\nDecepticons, transform and rise up!'`),
+      'reverse README sample',
+      12_000,
+    );
+    await collectLayout(cdp, sessionId, 1440, 900, false);
+    const reverseDesktopScreenshot = await captureScreenshot(cdp, sessionId, REVERSE_DESKTOP_SCREENSHOT, {
+      x: 0, y: 0, width: 1440, height: 900,
+    });
+    await evaluate(cdp, sessionId, `(() => {
+      document.querySelector('#direction-button').click();
+      document.querySelector('#sample-button').click();
+    })()`);
     const mobile = await collectLayout(cdp, sessionId, 390, 844, true);
     const mobileScreenshot = await captureScreenshot(cdp, sessionId, MOBILE_SCREENSHOT, {
       x: 0, y: 0, width: 390, height: 844,
     });
+    await evaluate(cdp, sessionId, `(() => {
+      document.querySelector('#direction-button').click();
+      document.querySelector('#sample-button').click();
+    })()`);
+    await waitUntil(
+      () => evaluate(cdp, sessionId, `window.__lastRecognition?.rawText === 'Peace through tyranny!\\nDecepticons, transform and rise up!'`),
+      'reverse mobile README sample',
+      12_000,
+    );
+    const reverseMobileScreenshot = await captureScreenshot(cdp, sessionId, REVERSE_MOBILE_SCREENSHOT, {
+      x: 0, y: 0, width: 390, height: 844,
+    });
+    await evaluate(cdp, sessionId, `document.querySelector('#direction-button').click()`);
     const compactDesktop = await collectLayout(cdp, sessionId, 1366, 768, false);
     const narrowMobile = await collectLayout(cdp, sessionId, 320, 720, true);
     const iphone14ProMax = await collectLayout(cdp, sessionId, 430, 932, true);
@@ -1532,6 +1564,8 @@ async function runSmoke() {
       screenshots: {
         desktop: desktopScreenshot,
         mobile: mobileScreenshot,
+        reverseDesktop: reverseDesktopScreenshot,
+        reverseMobile: reverseMobileScreenshot,
         reference: referenceScreenshot,
         transparentGlyph: transparentGlyphScreenshot,
       },
