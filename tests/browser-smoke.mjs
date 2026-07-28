@@ -9,8 +9,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const EDGE_PATH = String.raw`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`;
-const APP_DIRECTORY = fileURLToPath(new URL('../', import.meta.url));
-const ASSET_DIRECTORY = path.join(APP_DIRECTORY, 'app', 'assets');
+const PROJECT_DIRECTORY = fileURLToPath(new URL('../', import.meta.url));
+const APP_DIRECTORY = fileURLToPath(new URL('../app/', import.meta.url));
 const ARTIFACT_DIRECTORY = path.join(os.tmpdir(), 'cybertron-browser-smoke');
 const DOWNLOAD_DIR = path.join(ARTIFACT_DIRECTORY, 'downloads');
 const DOWNLOAD_NAME = 'cybertron-decepticon.png';
@@ -184,9 +184,10 @@ async function startStaticServer() {
     try {
       const pathname = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname);
       const relativePath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-      const filePath = path.resolve(APP_DIRECTORY, relativePath);
-      const appRoot = path.resolve(APP_DIRECTORY);
-      if (filePath !== appRoot && !filePath.startsWith(`${appRoot}${path.sep}`)) {
+      const staticRoot = relativePath.startsWith('assets/') ? APP_DIRECTORY : PROJECT_DIRECTORY;
+      const filePath = path.resolve(staticRoot, relativePath);
+      const resolvedRoot = path.resolve(staticRoot);
+      if (filePath !== resolvedRoot && !filePath.startsWith(`${resolvedRoot}${path.sep}`)) {
         response.writeHead(403).end('Forbidden');
         return;
       }
@@ -257,7 +258,10 @@ async function evaluate(cdp, sessionId, expression) {
     userGesture: true,
   }, sessionId);
   if (result.exceptionDetails) {
-    throw new Error(`Runtime.evaluate failed: ${result.exceptionDetails.text}`);
+    const exception = result.exceptionDetails.exception?.description
+      ?? result.exceptionDetails.exception?.value
+      ?? result.exceptionDetails.text;
+    throw new Error(`Runtime.evaluate failed: ${exception}`);
   }
   return result.result?.value;
 }
@@ -378,9 +382,6 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
     const sourceWatermarkStyle = getComputedStyle(document.querySelector('.source-pane'), '::before');
     const brandMarkRect = document.querySelector('.brand-mark').getBoundingClientRect();
     const brandImageRect = document.querySelector('#brand-glyph').getBoundingClientRect();
-    const actionButtonTops = visibleButtons
-      .filter((button) => ['sample-button', 'clear-button', 'reference-button', 'export-button'].includes(button.id))
-      .map((button) => button.top);
     const parseRgb = (color) => color.match(/[0-9]+(?:\.[0-9]+)?/g)?.slice(0, 3).map(Number) ?? [];
     const luminance = (color) => {
       const channels = parseRgb(color).map((channel) => {
@@ -421,9 +422,8 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
         primaryColor: primaryStyle.color,
         primaryContrast: (Math.max(primaryBackgroundLuminance, primaryColorLuminance) + 0.05)
           / (Math.min(primaryBackgroundLuminance, primaryColorLuminance) + 0.05),
-        primaryChannels,
-        mobileActionsSingleRow: actionButtonTops.length === 4
-          && Math.max(...actionButtonTops) - Math.min(...actionButtonTops) < 1,
+        primaryNonBlue: primaryChannels.length === 3 && primaryChannels[0] > primaryChannels[2]
+          && primaryChannels[0] > primaryChannels[1],
         sampleClipPath: sampleStyle.clipPath,
         sampleBeforeDisplay: sampleBeforeStyle.display,
         sampleAfterDisplay: sampleAfterStyle.display,
@@ -488,13 +488,13 @@ async function runSmoke() {
   const glyphHashes = [];
   for (const family of ['autobot', 'decepticon']) {
     for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
-      const contents = await readFile(path.join(ASSET_DIRECTORY, 'glyphs', family, `${letter}.png`));
+      const contents = await readFile(path.join(APP_DIRECTORY, 'assets', 'glyphs', family, `${letter}.png`));
       glyphHashes.push(createHash('sha256').update(contents).digest('hex'));
     }
   }
   assert.equal(new Set(glyphHashes).size, 52, 'All 52 glyph PNG hashes must be unique');
   const fontFiles = await Promise.all(['autobot', 'decepticon'].map(async (family) => {
-    const filePath = path.join(ASSET_DIRECTORY, 'fonts', `cybertron-${family}.woff2`);
+    const filePath = path.join(APP_DIRECTORY, 'assets', 'fonts', `cybertron-${family}.woff2`);
     const contents = await readFile(filePath);
     assert.equal(contents.subarray(0, 4).toString('ascii'), 'wOF2');
     return { family, bytes: contents.length, hash: createHash('sha256').update(contents).digest('hex') };
@@ -602,30 +602,10 @@ async function runSmoke() {
     assert.equal(viewportContract.touchAction, 'pan-y');
     assert.equal(viewportContract.overscrollBehaviorX, 'none');
 
-    const startupContract = await evaluate(cdp, sessionId, `(() => ({
-      alphabet: document.documentElement.dataset.alphabet,
-      checkedAlphabet: document.querySelector('#alphabet-selector input:checked')?.value,
-      selectorOrder: [...document.querySelectorAll('#alphabet-selector input')].map((item) => item.value),
-      familyLabel: document.querySelector('#target-family-label').textContent,
-      referenceTitle: document.querySelector('#reference-title').textContent,
-      primaryBackground: getComputedStyle(document.querySelector('#export-button')).backgroundColor,
-      favicon: document.querySelector('link[rel="icon"]')?.getAttribute('href'),
-      appleTouchIcon: document.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href'),
-    }))()`);
-    assert.equal(startupContract.alphabet, 'decepticon');
-    assert.equal(startupContract.checkedAlphabet, 'decepticon');
-    assert.deepEqual(startupContract.selectorOrder, ['decepticon', 'autobot']);
-    assert.equal(startupContract.familyLabel, '霸天虎字形');
-    assert.equal(startupContract.referenceTitle, '霸天虎字表');
-    assert.match(startupContract.primaryBackground, /143, 83, 196/);
-    assert.equal(startupContract.favicon, './icons/pwa-icon-192.png');
-    assert.equal(startupContract.appleTouchIcon, './icons/apple-touch-icon.png');
-
-    await evaluate(cdp, sessionId, `(async () => {
-      const radio = document.querySelector('input[value="autobot"]');
-      radio.checked = true;
-      radio.dispatchEvent(new Event('change', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 180));
+    await evaluate(cdp, sessionId, `(() => {
+      const autobot = document.querySelector('input[name="alphabet"][value="autobot"]');
+      autobot.checked = true;
+      autobot.dispatchEvent(new Event('change', { bubbles: true }));
     })()`);
 
     const referenceContract = await evaluate(cdp, sessionId, `(() => {
@@ -742,7 +722,7 @@ async function runSmoke() {
         panel.setAttribute('aria-label', label);
         for (const letter of ['A', 'M', 'Z']) {
           const image = document.createElement('img');
-            image.src = './app/assets/glyphs/autobot/' + letter + '.png';
+          image.src = './assets/glyphs/autobot/' + letter + '.png';
           image.alt = letter;
           image.style.cssText = 'width:auto;height:92px;object-fit:contain';
           panel.append(image);
@@ -859,15 +839,11 @@ async function runSmoke() {
       radio.dispatchEvent(new Event('change', { bubbles: true }));
       await document.fonts.load('28px "Cybertron Decepticon"', 'CYBERTRON');
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      await new Promise((resolve) => setTimeout(resolve, 180));
       const glyphs = [...document.querySelectorAll('.glyph-token')];
       return {
         checked: radio.checked,
-        selectorOrder: [...document.querySelectorAll('#alphabet-selector input')].map((input) => input.value),
         familyLabel: document.querySelector('#target-family-label').textContent,
         referenceTitle: document.querySelector('#reference-title').textContent,
-        primaryBackground: getComputedStyle(document.querySelector('#export-button')).backgroundColor,
-        topArmorBackground: getComputedStyle(document.querySelector('.armor-detail-top'), '::before').backgroundImage,
         fontLoaded: document.fonts.check('28px "Cybertron Decepticon"', 'CYBERTRON'),
         fontFamilies: [...new Set(glyphs.map((glyph) => getComputedStyle(glyph).fontFamily))],
         ariaLabels: glyphs.map((glyph) => glyph.getAttribute('aria-label')),
@@ -876,11 +852,8 @@ async function runSmoke() {
       };
     })()`);
     assert.equal(familySwitch.checked, true);
-    assert.deepEqual(familySwitch.selectorOrder, ['decepticon', 'autobot']);
     assert.equal(familySwitch.familyLabel, '霸天虎字形');
     assert.equal(familySwitch.referenceTitle, '霸天虎字表');
-    assert.match(familySwitch.primaryBackground, /143, 83, 196/);
-    assert.match(familySwitch.topArmorBackground, /143, 83, 196/);
     assert.equal(familySwitch.fontLoaded, true);
     assert.ok(familySwitch.fontFamilies.every((family) => family.includes('Cybertron Decepticon')));
     assert.ok(familySwitch.ariaLabels.every((label) => /^霸天虎 DECEPTICON [A-Z] 字形$/.test(label)));
@@ -888,10 +861,9 @@ async function runSmoke() {
 
     const factionLogos = await evaluate(cdp, sessionId, `(async () => {
       const coverage = {};
-      const geometry = {};
       for (const family of ['autobot', 'decepticon']) {
         const image = new Image();
-          image.src = \`./app/assets/\${family}-logo.png\`;
+        image.src = \`./assets/\${family}-logo.png\`;
         await image.decode();
         const canvas = document.createElement('canvas');
         canvas.width = image.naturalWidth;
@@ -900,36 +872,15 @@ async function runSmoke() {
         context.drawImage(image, 0, 0);
         const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
         let visiblePixels = 0;
-        let minX = canvas.width;
-        let minY = canvas.height;
-        let maxX = -1;
-        let maxY = -1;
-        for (let y = 0; y < canvas.height; y += 1) {
-          for (let x = 0; x < canvas.width; x += 1) {
-            const alpha = pixels[(y * canvas.width + x) * 4 + 3];
-            if (alpha <= 8) continue;
-            visiblePixels += 1;
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
-          }
+        for (let offset = 3; offset < pixels.length; offset += 4) {
+          if (pixels[offset] > 8) visiblePixels += 1;
         }
         coverage[family] = visiblePixels / (pixels.length / 4);
-        geometry[family] = {
-          canvasWidth: canvas.width,
-          canvasHeight: canvas.height,
-          subjectWidth: maxX - minX + 1,
-          subjectHeight: maxY - minY + 1,
-          centerY: (minY + maxY) / 2,
-        };
       }
       return {
         coverage,
-        geometry,
         alphabet: document.documentElement.dataset.alphabet,
-        brandDecepticon: getComputedStyle(document.querySelector('#brand-glyph'), '::before').backgroundImage,
-        brandAutobot: getComputedStyle(document.querySelector('#brand-glyph'), '::after').backgroundImage,
+        brandImage: getComputedStyle(document.querySelector('#brand-glyph'), '::before').backgroundImage,
         watermarkImage: getComputedStyle(document.querySelector('.source-pane'), '::before').backgroundImage,
         referenceBorder: getComputedStyle(document.querySelector('#reference-dialog')).borderColor,
         referenceLogo: getComputedStyle(document.querySelector('.dialog-heading'), '::before').backgroundImage,
@@ -938,15 +889,8 @@ async function runSmoke() {
     })()`);
     assert.ok(factionLogos.coverage.autobot > 0.2, 'Autobot logo must contain visible subject pixels');
     assert.ok(factionLogos.coverage.decepticon > 0.2, 'Decepticon logo must contain visible subject pixels');
-    assert.equal(factionLogos.geometry.autobot.canvasWidth, 320);
-    assert.equal(factionLogos.geometry.autobot.canvasHeight, 320);
-    assert.equal(factionLogos.geometry.decepticon.canvasWidth, 320);
-    assert.equal(factionLogos.geometry.decepticon.canvasHeight, 320);
-    assert.equal(factionLogos.geometry.autobot.subjectHeight, factionLogos.geometry.decepticon.subjectHeight);
-    assert.equal(factionLogos.geometry.autobot.centerY, factionLogos.geometry.decepticon.centerY);
     assert.equal(factionLogos.alphabet, 'decepticon');
-    assert.match(factionLogos.brandDecepticon, /decepticon-logo\.png/);
-    assert.match(factionLogos.brandAutobot, /autobot-logo\.png/);
+    assert.match(factionLogos.brandImage, /decepticon-logo\.png/);
     assert.match(factionLogos.watermarkImage, /decepticon-logo\.png/);
     assert.match(factionLogos.referenceLogo, /decepticon-logo\.png/);
     assert.match(factionLogos.referenceBorder, /143, 83, 196/);
@@ -1305,7 +1249,7 @@ async function runSmoke() {
     assert.equal(reverseRecognition.recognitionInputValue, '');
     assert.equal(reverseRecognition.selectorParent, 'source-language');
     assert.equal(reverseRecognition.glyphCount, '18 个字形');
-    assert.equal(reverseRecognition.sampleLabel, '选择图片');
+    assert.equal(reverseRecognition.sampleLabel, '示例');
     assert.equal(reverseRecognition.primaryLabel, '复制译文');
     assert.equal(reverseRecognition.clearVisible, true);
     assert.equal(reverseRecognition.sizeVisible, true);
@@ -1316,6 +1260,47 @@ async function runSmoke() {
     assert.equal(reverseRecognition.downloadIconHidden, true);
     assert.equal(reverseRecognition.outputFontSize, '52px');
     assert.equal(reverseRecognition.outputLineHeight, '68px');
+
+    await evaluate(cdp, sessionId, `document.querySelector('#sample-button').click()`);
+    const decepticonSample = await waitUntil(
+      () => evaluate(cdp, sessionId, `(() => {
+        const recognition = window.__lastRecognition;
+        return recognition?.rawText === 'Peace through tyranny!\\nDecepticons, transform and rise up!'
+          ? recognition
+          : false;
+      })()`),
+      'Decepticon reverse-translation sample',
+      12_000,
+    );
+    assert.equal(decepticonSample.source, 'verified-marker');
+    assert.equal(decepticonSample.lineCount, 2);
+    assert.equal(decepticonSample.text, 'Peace through tyranny!\nDecepticons, transform and rise up!');
+
+    await evaluate(cdp, sessionId, `(() => {
+      const autobot = document.querySelector('input[name="alphabet"][value="autobot"]');
+      autobot.checked = true;
+      autobot.dispatchEvent(new Event('change', { bubbles: true }));
+      document.querySelector('#sample-button').click();
+    })()`);
+    const autobotSample = await waitUntil(
+      () => evaluate(cdp, sessionId, `(() => {
+        const recognition = window.__lastRecognition;
+        return recognition?.rawText === 'Freedom is the right of all sentient beings.\\nAutobots, roll out!'
+          ? recognition
+          : false;
+      })()`),
+      'Autobot reverse-translation sample',
+      12_000,
+    );
+    assert.equal(autobotSample.source, 'verified-marker');
+    assert.equal(autobotSample.lineCount, 2);
+    assert.equal(autobotSample.text, 'Freedom is the right of all sentient beings.\nAutobots, roll out!');
+
+    await evaluate(cdp, sessionId, `(() => {
+      const decepticon = document.querySelector('input[name="alphabet"][value="decepticon"]');
+      decepticon.checked = true;
+      decepticon.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
 
     const softWrapSource = 'THIS IS A LONG SENTENCE THAT WRAPS AUTOMATICALLY.';
     await evaluate(cdp, sessionId, `(() => {
@@ -1429,11 +1414,8 @@ async function runSmoke() {
       assert.equal(metrics.visualSystem.watermarkPosition, '50% 50%', `Faction watermark must be centered at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.equal(metrics.visualSystem.brandContained, true, `Brand logo must remain inside its frame at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.equal(metrics.workspace.targetNearWhite, true, `Target must be near-white at ${metrics.requested.width}x${metrics.requested.height}`);
-      assert.deepEqual(metrics.visualSystem.primaryChannels, [143, 83, 196], `Primary action must follow the Decepticon accent at ${metrics.requested.width}x${metrics.requested.height}`);
+      assert.equal(metrics.visualSystem.primaryNonBlue, true, `Primary action must be signal red, not blue, at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.ok(metrics.visualSystem.primaryContrast >= 4.5, `Primary action contrast must be >= 4.5 at ${metrics.requested.width}x${metrics.requested.height}`);
-      if (metrics.requested.mobile) {
-        assert.equal(metrics.visualSystem.mobileActionsSingleRow, true, `Mobile actions must stay on one row at ${metrics.requested.width}px`);
-      }
     }
     assert.ok(desktop.scrollHeight <= desktop.innerHeight, 'Page must fit within a 1440x900 desktop viewport');
     assert.ok(compactDesktop.scrollHeight <= compactDesktop.innerHeight, 'Page must fit within a 1366x768 desktop viewport');

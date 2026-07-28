@@ -16,6 +16,14 @@
   unicode-range: U+0041-005A, U+0061-007A;
 }
 
+@font-face {
+  font-family: "Cybertron DIN Fallback";
+  src: url("./assets/fonts/gidole-latin-400-normal.woff2") format("woff2");
+  font-display: block;
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
   color-scheme: light;
   --ink: #111313;
@@ -37,6 +45,7 @@
   --word-gap: 10px;
   --punctuation-lift: 3px;
   --cybertron-font: "Cybertron Autobot";
+  --literal-font: "Bahnschrift", "Cybertron DIN Fallback", "Aptos", "Microsoft YaHei UI", sans-serif;
   font-family: "Bahnschrift", "Aptos", "Microsoft YaHei UI", sans-serif;
 }
 
@@ -334,7 +343,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, dialog:focus-
   background: transparent;
   border: 0;
   box-shadow: none;
-  font-family: "Bahnschrift", "Aptos", "Microsoft YaHei UI", sans-serif;
+  font-family: var(--literal-font);
   font-size: var(--literal-size);
   font-weight: 400;
   line-height: 0.82;

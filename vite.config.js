@@ -14,9 +14,9 @@ export default defineConfig({
         'icons/pwa-icon-maskable-512.png',
       ],
       manifest: {
-        name: '塞伯坦翻译器',
-        short_name: '塞伯坦翻译器',
-        description: '支持汽车人与霸天虎字形的离线塞伯坦翻译工具',
+        name: '塞伯坦译码器',
+        short_name: '塞伯坦译码器',
+        description: '支持汽车人与霸天虎字形的离线塞伯坦译码工具',
         lang: 'zh-CN',
         start_url: './',
         scope: './',

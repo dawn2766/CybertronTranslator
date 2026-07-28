@@ -55,6 +55,10 @@ const primaryActionIcon = document.querySelector('#primary-action-icon');
 const primaryActionLabel = document.querySelector('#primary-action-label');
 const SIZE_RANGE = Object.freeze({ min: 16, max: 52, default: 28 });
 const EXPORT_BACKGROUND = '#fdfdfb';
+const FACTION_SAMPLE_TEXT = Object.freeze({
+  decepticon: 'Peace through tyranny!\nDecepticons, transform and rise up!',
+  autobot: 'Freedom is the right of all sentient beings.\nAutobots, roll out!',
+});
 let currentAlphabetId = DEFAULT_ALPHABET_ID;
 let currentDirection = TRANSLATION_DIRECTIONS.ENGLISH_TO_CYBERTRON;
 let currentTokens = [];
@@ -126,12 +130,12 @@ function updateDirectionInterface() {
   input.disabled = !forward;
   recognitionPanel.hidden = forward;
   output.setAttribute('aria-label', forward ? `${alphabet.zhLabel} ${alphabet.enLabel} 字形输出` : '英文翻译输出');
-  sampleButton.dataset.action = forward ? 'sample' : 'upload';
-  sampleActionLabel.textContent = forward ? '示例' : '选择图片';
-  sampleButton.setAttribute('aria-label', forward ? '加载示例' : '选择识别图片');
-  sampleButton.title = forward ? '加载示例' : '选择识别图片';
-  sampleButton.querySelector('[data-icon="lightbulb"]').toggleAttribute('hidden', !forward);
-  sampleButton.querySelector('[data-icon="upload"]').toggleAttribute('hidden', forward);
+  sampleButton.dataset.action = 'sample';
+  sampleActionLabel.textContent = '示例';
+  sampleButton.setAttribute('aria-label', `加载${alphabet.zhLabel}示例`);
+  sampleButton.title = `加载${alphabet.zhLabel}示例`;
+  sampleButton.querySelector('[data-icon="lightbulb"]').removeAttribute('hidden');
+  sampleButton.querySelector('[data-icon="upload"]').setAttribute('hidden', '');
   exportButton.dataset.action = forward ? 'export' : 'copy';
   primaryActionLabel.textContent = forward ? '导出图片' : '复制译文';
   exportButton.setAttribute('aria-label', forward ? '导出图片' : '复制译文');
@@ -334,17 +338,6 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 3000);
 }
 
-function loadSample() {
-  if (!isEnglishToCybertron()) {
-    showToast('反向翻译请上传塞伯坦文字图片');
-    recognitionInput.click();
-    return;
-  }
-  input.value = '“Hello,” we\'re here.';
-  updatePreview();
-  input.focus();
-}
-
 function clearAll() {
   input.value = '';
   if (!isEnglishToCybertron()) {
@@ -357,30 +350,25 @@ function clearAll() {
   input.focus();
 }
 
-async function exportPng() {
-  if (currentTokens.length === 0) {
-    showToast('请先输入要导出的文字');
-    input.focus();
-    return;
-  }
-  const alphabet = getCurrentAlphabet();
-  try {
-    const padding = 32;
-    const {
-      selectedSize, glyphHeight, literalSize, glyphGap, wordGap, lineHeight, punctuationLift,
-    } = renderSettings;
-    const glyphFont = `${glyphHeight}px "${alphabet.fontFamily}"`;
-    await document.fonts.load(glyphFont, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-    const previewFlow = output.querySelector('.token-flow');
-    const lineWidth = Math.max(1, Math.floor(previewFlow?.clientWidth ?? output.clientWidth));
-    const measureCanvas = document.createElement('canvas');
-    const measureContext = measureCanvas.getContext('2d');
-    const literalFont = `${literalSize}px Bahnschrift, "Microsoft YaHei UI", sans-serif`;
-    measureContext.font = literalFont;
-    const layout = [];
-    let lineIndex = 0;
-    let lineWidthUsed = 0;
-    for (const token of currentTokens) {
+async function createCybertronCanvas(tokens, text, alphabet) {
+  const padding = 32;
+  const {
+    selectedSize, glyphHeight, literalSize, glyphGap, wordGap, lineHeight, punctuationLift,
+  } = renderSettings;
+  const glyphFont = `${glyphHeight}px "${alphabet.fontFamily}"`;
+  await document.fonts.load(glyphFont, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+  const previewFlow = output.querySelector('.token-flow');
+  const lineWidth = Math.max(1, Math.floor(previewFlow?.clientWidth ?? output.clientWidth));
+  const measureCanvas = document.createElement('canvas');
+  const measureContext = measureCanvas.getContext('2d');
+  const literalFontFamily = getComputedStyle(document.documentElement)
+    .getPropertyValue('--literal-font').trim();
+  const literalFont = `${literalSize}px ${literalFontFamily}`;
+  measureContext.font = literalFont;
+  const layout = [];
+  let lineIndex = 0;
+  let lineWidthUsed = 0;
+  for (const token of tokens) {
       if (token.type === 'newline') {
         layout.push({ token, lineIndex, x: lineWidthUsed, contentWidth: 0, advance: 0 });
         lineIndex += 1;
@@ -407,37 +395,39 @@ async function exportPng() {
       }
       layout.push({ token, lineIndex, x: lineWidthUsed, contentWidth, advance });
       lineWidthUsed += advance;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = lineWidth + padding * 2;
+  canvas.height = Math.max(120, padding * 2 + (lineIndex + 1) * lineHeight);
+  const context = canvas.getContext('2d');
+  context.fillStyle = EXPORT_BACKGROUND;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.font = literalFont;
+  const contentTop = padding + Math.max(0, (lineHeight - glyphHeight) / 2);
+  for (const entry of layout) {
+    const x = padding + entry.x;
+    const y = contentTop + entry.lineIndex * lineHeight;
+    if (entry.token.type === 'glyph') {
+      context.fillStyle = '#000000';
+      context.font = glyphFont;
+      context.textBaseline = 'alphabetic';
+      context.fillText(entry.token.source, x, y + glyphHeight);
+    } else if (entry.token.type === 'literal') {
+      context.fillStyle = '#000000';
+      context.font = literalFont;
+      context.textBaseline = entry.token.placement === 'top' ? 'top' : 'alphabetic';
+      const literalY = entry.token.placement === 'top' ? y : y + glyphHeight - punctuationLift;
+      context.fillText(entry.token.value, x, literalY);
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = lineWidth + padding * 2;
-    canvas.height = Math.max(120, padding * 2 + (lineIndex + 1) * lineHeight);
-    const context = canvas.getContext('2d');
-    context.fillStyle = EXPORT_BACKGROUND;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.font = literalFont;
-    const contentTop = padding + Math.max(0, (lineHeight - glyphHeight) / 2);
-    for (const entry of layout) {
-      const x = padding + entry.x;
-      const y = contentTop + entry.lineIndex * lineHeight;
-      if (entry.token.type === 'glyph') {
-        context.fillStyle = '#000000';
-        context.font = glyphFont;
-        context.textBaseline = 'alphabetic';
-        context.fillText(entry.token.source, x, y + glyphHeight);
-      } else if (entry.token.type === 'literal') {
-        context.fillStyle = '#000000';
-        context.font = literalFont;
-        context.textBaseline = entry.token.placement === 'top' ? 'top' : 'alphabetic';
-        const literalY = entry.token.placement === 'top' ? y : y + glyphHeight - punctuationLift;
-        context.fillText(entry.token.value, x, literalY);
-      }
-    }
-    embedCybertronPayload(canvas, {
-      family: alphabet.id,
-      size: selectedSize,
-      text: input.value,
-    });
-    window.__lastExportLayout = {
+  }
+  embedCybertronPayload(canvas, {
+    family: alphabet.id,
+    size: selectedSize,
+    text,
+  });
+  return {
+    canvas,
+    layout: {
       alphabetId: alphabet.id,
       zhLabel: alphabet.zhLabel,
       enLabel: alphabet.enLabel,
@@ -453,7 +443,7 @@ async function exportPng() {
       lineHeight,
       background: EXPORT_BACKGROUND,
       recognitionMarker: 'CYIMG1',
-      tokenOrder: currentTokens.map((token) => token.source ?? token.value).join(''),
+      tokenOrder: tokens.map((token) => token.source ?? token.value).join(''),
       entries: layout.map((entry) => ({
         type: entry.token.type,
         value: entry.token.source ?? entry.token.value,
@@ -463,13 +453,51 @@ async function exportPng() {
         contentWidth: entry.contentWidth,
         advance: entry.advance,
       })),
-    };
-    const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob((result) => {
-        if (result) resolve(result);
-        else reject(new Error('PNG encoding failed'));
-      }, 'image/png');
-    });
+    },
+  };
+}
+
+function canvasToPngBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error('PNG encoding failed'));
+    }, 'image/png');
+  });
+}
+
+async function loadSample() {
+  const alphabet = getCurrentAlphabet();
+  const sampleText = FACTION_SAMPLE_TEXT[alphabet.id];
+  if (isEnglishToCybertron()) {
+    input.value = sampleText;
+    updatePreview();
+    input.focus();
+    return;
+  }
+  recognitionStatus.textContent = `正在加载${alphabet.zhLabel}示例…`;
+  try {
+    const tokens = tokenizeInput(sampleText, alphabet.manifest);
+    const { canvas } = await createCybertronCanvas(tokens, sampleText, alphabet);
+    const blob = await canvasToPngBlob(canvas);
+    await recognizeFile(new File([blob], `cybertron-${alphabet.downloadSlug}-sample.png`, { type: 'image/png' }));
+  } catch {
+    recognitionStatus.textContent = '示例图片生成失败，请重试';
+    renderEnglish('');
+  }
+}
+
+async function exportPng() {
+  if (currentTokens.length === 0) {
+    showToast('请先输入要导出的文字');
+    input.focus();
+    return;
+  }
+  const alphabet = getCurrentAlphabet();
+  try {
+    const { canvas, layout } = await createCybertronCanvas(currentTokens, input.value, alphabet);
+    window.__lastExportLayout = layout;
+    const blob = await canvasToPngBlob(canvas);
     const fileName = `cybertron-${alphabet.downloadSlug}.png`;
     const link = document.createElement('a');
     const objectUrl = URL.createObjectURL(blob);
