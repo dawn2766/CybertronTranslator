@@ -1,4 +1,3 @@
 node_modules/
 dist/
 tests/artifacts/*
-!tests/artifacts/dual-family-glyph-provenance.csv

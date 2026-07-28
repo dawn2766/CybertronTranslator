@@ -15,7 +15,7 @@ function createAlphabet(id, zhLabel, enLabel, downloadSlug, fontFamily) {
   });
 }
 
-export const DEFAULT_ALPHABET_ID = 'autobot';
+export const DEFAULT_ALPHABET_ID = 'decepticon';
 
 export const TRANSLATION_DIRECTIONS = Object.freeze({
   ENGLISH_TO_CYBERTRON: 'english-to-cybertron',

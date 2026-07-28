@@ -39,7 +39,6 @@ const alphabetSelector = document.querySelector('#alphabet-selector');
 const targetFamilyLabel = document.querySelector('#target-family-label');
 const referenceTitle = document.querySelector('#reference-title');
 const closeReference = document.querySelector('#close-reference');
-const brandGlyph = document.querySelector('#brand-glyph');
 const workspace = document.querySelector('#translator-workspace');
 const sourceLanguage = document.querySelector('#source-language');
 const targetLanguage = document.querySelector('#target-language');
@@ -73,7 +72,8 @@ function isEnglishToCybertron() {
 
 function renderAlphabetSelector() {
   const fragment = document.createDocumentFragment();
-  for (const alphabet of Object.values(ALPHABET_REGISTRY)) {
+  for (const alphabetId of ['decepticon', 'autobot']) {
+    const alphabet = ALPHABET_REGISTRY[alphabetId];
     const label = document.createElement('label');
     label.className = 'alphabet-option';
     const radio = document.createElement('input');
@@ -103,7 +103,6 @@ function updateAlphabetInterface() {
   document.documentElement.style.setProperty('--faction-logo', `url("${factionLogo}")`);
   referenceTitle.textContent = `${alphabet.zhLabel}字表`;
   closeReference.setAttribute('aria-label', `关闭${alphabet.zhLabel}字表`);
-  brandGlyph.src = factionLogo;
   updateDirectionInterface();
   renderReference();
 }
@@ -129,10 +128,14 @@ function updateDirectionInterface() {
   output.setAttribute('aria-label', forward ? `${alphabet.zhLabel} ${alphabet.enLabel} 字形输出` : '英文翻译输出');
   sampleButton.dataset.action = forward ? 'sample' : 'upload';
   sampleActionLabel.textContent = forward ? '示例' : '选择图片';
+  sampleButton.setAttribute('aria-label', forward ? '加载示例' : '选择识别图片');
+  sampleButton.title = forward ? '加载示例' : '选择识别图片';
   sampleButton.querySelector('[data-icon="lightbulb"]').toggleAttribute('hidden', !forward);
   sampleButton.querySelector('[data-icon="upload"]').toggleAttribute('hidden', forward);
   exportButton.dataset.action = forward ? 'export' : 'copy';
   primaryActionLabel.textContent = forward ? '导出图片' : '复制译文';
+  exportButton.setAttribute('aria-label', forward ? '导出图片' : '复制译文');
+  exportButton.title = forward ? '导出图片' : '复制译文';
   primaryActionIcon.querySelector('[data-icon="download"]').toggleAttribute('hidden', !forward);
   primaryActionIcon.querySelector('[data-icon="copy"]').toggleAttribute('hidden', forward);
 }

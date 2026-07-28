@@ -378,6 +378,9 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
     const sourceWatermarkStyle = getComputedStyle(document.querySelector('.source-pane'), '::before');
     const brandMarkRect = document.querySelector('.brand-mark').getBoundingClientRect();
     const brandImageRect = document.querySelector('#brand-glyph').getBoundingClientRect();
+    const actionButtonTops = visibleButtons
+      .filter((button) => ['sample-button', 'clear-button', 'reference-button', 'export-button'].includes(button.id))
+      .map((button) => button.top);
     const parseRgb = (color) => color.match(/[0-9]+(?:\.[0-9]+)?/g)?.slice(0, 3).map(Number) ?? [];
     const luminance = (color) => {
       const channels = parseRgb(color).map((channel) => {
@@ -418,8 +421,9 @@ async function collectLayout(cdp, sessionId, width, height, mobile) {
         primaryColor: primaryStyle.color,
         primaryContrast: (Math.max(primaryBackgroundLuminance, primaryColorLuminance) + 0.05)
           / (Math.min(primaryBackgroundLuminance, primaryColorLuminance) + 0.05),
-        primaryNonBlue: primaryChannels.length === 3 && primaryChannels[0] > primaryChannels[2]
-          && primaryChannels[0] > primaryChannels[1],
+        primaryChannels,
+        mobileActionsSingleRow: actionButtonTops.length === 4
+          && Math.max(...actionButtonTops) - Math.min(...actionButtonTops) < 1,
         sampleClipPath: sampleStyle.clipPath,
         sampleBeforeDisplay: sampleBeforeStyle.display,
         sampleAfterDisplay: sampleAfterStyle.display,
@@ -597,6 +601,32 @@ async function runSmoke() {
     assert.match(viewportContract.content, /user-scalable=no/);
     assert.equal(viewportContract.touchAction, 'pan-y');
     assert.equal(viewportContract.overscrollBehaviorX, 'none');
+
+    const startupContract = await evaluate(cdp, sessionId, `(() => ({
+      alphabet: document.documentElement.dataset.alphabet,
+      checkedAlphabet: document.querySelector('#alphabet-selector input:checked')?.value,
+      selectorOrder: [...document.querySelectorAll('#alphabet-selector input')].map((item) => item.value),
+      familyLabel: document.querySelector('#target-family-label').textContent,
+      referenceTitle: document.querySelector('#reference-title').textContent,
+      primaryBackground: getComputedStyle(document.querySelector('#export-button')).backgroundColor,
+      favicon: document.querySelector('link[rel="icon"]')?.getAttribute('href'),
+      appleTouchIcon: document.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href'),
+    }))()`);
+    assert.equal(startupContract.alphabet, 'decepticon');
+    assert.equal(startupContract.checkedAlphabet, 'decepticon');
+    assert.deepEqual(startupContract.selectorOrder, ['decepticon', 'autobot']);
+    assert.equal(startupContract.familyLabel, '霸天虎字形');
+    assert.equal(startupContract.referenceTitle, '霸天虎字表');
+    assert.match(startupContract.primaryBackground, /143, 83, 196/);
+    assert.equal(startupContract.favicon, './icons/pwa-icon-192.png');
+    assert.equal(startupContract.appleTouchIcon, './icons/apple-touch-icon.png');
+
+    await evaluate(cdp, sessionId, `(async () => {
+      const radio = document.querySelector('input[value="autobot"]');
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 180));
+    })()`);
 
     const referenceContract = await evaluate(cdp, sessionId, `(() => {
       const dialog = document.querySelector('#reference-dialog');
@@ -829,11 +859,15 @@ async function runSmoke() {
       radio.dispatchEvent(new Event('change', { bubbles: true }));
       await document.fonts.load('28px "Cybertron Decepticon"', 'CYBERTRON');
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await new Promise((resolve) => setTimeout(resolve, 180));
       const glyphs = [...document.querySelectorAll('.glyph-token')];
       return {
         checked: radio.checked,
+        selectorOrder: [...document.querySelectorAll('#alphabet-selector input')].map((input) => input.value),
         familyLabel: document.querySelector('#target-family-label').textContent,
         referenceTitle: document.querySelector('#reference-title').textContent,
+        primaryBackground: getComputedStyle(document.querySelector('#export-button')).backgroundColor,
+        topArmorBackground: getComputedStyle(document.querySelector('.armor-detail-top'), '::before').backgroundImage,
         fontLoaded: document.fonts.check('28px "Cybertron Decepticon"', 'CYBERTRON'),
         fontFamilies: [...new Set(glyphs.map((glyph) => getComputedStyle(glyph).fontFamily))],
         ariaLabels: glyphs.map((glyph) => glyph.getAttribute('aria-label')),
@@ -842,8 +876,11 @@ async function runSmoke() {
       };
     })()`);
     assert.equal(familySwitch.checked, true);
+    assert.deepEqual(familySwitch.selectorOrder, ['decepticon', 'autobot']);
     assert.equal(familySwitch.familyLabel, '霸天虎字形');
     assert.equal(familySwitch.referenceTitle, '霸天虎字表');
+    assert.match(familySwitch.primaryBackground, /143, 83, 196/);
+    assert.match(familySwitch.topArmorBackground, /143, 83, 196/);
     assert.equal(familySwitch.fontLoaded, true);
     assert.ok(familySwitch.fontFamilies.every((family) => family.includes('Cybertron Decepticon')));
     assert.ok(familySwitch.ariaLabels.every((label) => /^霸天虎 DECEPTICON [A-Z] 字形$/.test(label)));
@@ -851,6 +888,7 @@ async function runSmoke() {
 
     const factionLogos = await evaluate(cdp, sessionId, `(async () => {
       const coverage = {};
+      const geometry = {};
       for (const family of ['autobot', 'decepticon']) {
         const image = new Image();
           image.src = \`./app/assets/\${family}-logo.png\`;
@@ -862,15 +900,36 @@ async function runSmoke() {
         context.drawImage(image, 0, 0);
         const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
         let visiblePixels = 0;
-        for (let offset = 3; offset < pixels.length; offset += 4) {
-          if (pixels[offset] > 8) visiblePixels += 1;
+        let minX = canvas.width;
+        let minY = canvas.height;
+        let maxX = -1;
+        let maxY = -1;
+        for (let y = 0; y < canvas.height; y += 1) {
+          for (let x = 0; x < canvas.width; x += 1) {
+            const alpha = pixels[(y * canvas.width + x) * 4 + 3];
+            if (alpha <= 8) continue;
+            visiblePixels += 1;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
         }
         coverage[family] = visiblePixels / (pixels.length / 4);
+        geometry[family] = {
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+          subjectWidth: maxX - minX + 1,
+          subjectHeight: maxY - minY + 1,
+          centerY: (minY + maxY) / 2,
+        };
       }
       return {
         coverage,
+        geometry,
         alphabet: document.documentElement.dataset.alphabet,
-        brandSource: document.querySelector('#brand-glyph').getAttribute('src'),
+        brandDecepticon: getComputedStyle(document.querySelector('#brand-glyph'), '::before').backgroundImage,
+        brandAutobot: getComputedStyle(document.querySelector('#brand-glyph'), '::after').backgroundImage,
         watermarkImage: getComputedStyle(document.querySelector('.source-pane'), '::before').backgroundImage,
         referenceBorder: getComputedStyle(document.querySelector('#reference-dialog')).borderColor,
         referenceLogo: getComputedStyle(document.querySelector('.dialog-heading'), '::before').backgroundImage,
@@ -879,8 +938,15 @@ async function runSmoke() {
     })()`);
     assert.ok(factionLogos.coverage.autobot > 0.2, 'Autobot logo must contain visible subject pixels');
     assert.ok(factionLogos.coverage.decepticon > 0.2, 'Decepticon logo must contain visible subject pixels');
+    assert.equal(factionLogos.geometry.autobot.canvasWidth, 320);
+    assert.equal(factionLogos.geometry.autobot.canvasHeight, 320);
+    assert.equal(factionLogos.geometry.decepticon.canvasWidth, 320);
+    assert.equal(factionLogos.geometry.decepticon.canvasHeight, 320);
+    assert.equal(factionLogos.geometry.autobot.subjectHeight, factionLogos.geometry.decepticon.subjectHeight);
+    assert.equal(factionLogos.geometry.autobot.centerY, factionLogos.geometry.decepticon.centerY);
     assert.equal(factionLogos.alphabet, 'decepticon');
-      assert.match(factionLogos.brandSource, /\/app\/assets\/decepticon-logo\.png$/);
+    assert.match(factionLogos.brandDecepticon, /decepticon-logo\.png/);
+    assert.match(factionLogos.brandAutobot, /autobot-logo\.png/);
     assert.match(factionLogos.watermarkImage, /decepticon-logo\.png/);
     assert.match(factionLogos.referenceLogo, /decepticon-logo\.png/);
     assert.match(factionLogos.referenceBorder, /143, 83, 196/);
@@ -1363,8 +1429,11 @@ async function runSmoke() {
       assert.equal(metrics.visualSystem.watermarkPosition, '50% 50%', `Faction watermark must be centered at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.equal(metrics.visualSystem.brandContained, true, `Brand logo must remain inside its frame at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.equal(metrics.workspace.targetNearWhite, true, `Target must be near-white at ${metrics.requested.width}x${metrics.requested.height}`);
-      assert.equal(metrics.visualSystem.primaryNonBlue, true, `Primary action must be signal red, not blue, at ${metrics.requested.width}x${metrics.requested.height}`);
+      assert.deepEqual(metrics.visualSystem.primaryChannels, [143, 83, 196], `Primary action must follow the Decepticon accent at ${metrics.requested.width}x${metrics.requested.height}`);
       assert.ok(metrics.visualSystem.primaryContrast >= 4.5, `Primary action contrast must be >= 4.5 at ${metrics.requested.width}x${metrics.requested.height}`);
+      if (metrics.requested.mobile) {
+        assert.equal(metrics.visualSystem.mobileActionsSingleRow, true, `Mobile actions must stay on one row at ${metrics.requested.width}px`);
+      }
     }
     assert.ok(desktop.scrollHeight <= desktop.innerHeight, 'Page must fit within a 1440x900 desktop viewport');
     assert.ok(compactDesktop.scrollHeight <= compactDesktop.innerHeight, 'Page must fit within a 1366x768 desktop viewport');

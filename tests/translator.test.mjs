@@ -18,7 +18,7 @@ test('translation directions are stable', () => {
 });
 
 test('registry is deeply immutable and contains two complete independent alphabets', async () => {
-  assert.equal(DEFAULT_ALPHABET_ID, 'autobot');
+  assert.equal(DEFAULT_ALPHABET_ID, 'decepticon');
   assert.equal(Object.isFrozen(ALPHABET_REGISTRY), true);
     assert.deepEqual(Object.keys(ALPHABET_REGISTRY), ['autobot', 'decepticon']);
   assert.deepEqual(
@@ -72,7 +72,7 @@ test('tokenizer maps Cybertron case-insensitively with the default or selected m
   const decepticonTokens = tokenizeInput('Cybertron', ALPHABET_REGISTRY.decepticon.manifest);
   assert.deepEqual(defaultTokens.map((token) => token.value), [...'CYBERTRON']);
   assert.deepEqual(defaultTokens.map((token) => token.glyph.letter), [...'CYBERTRON']);
-  assert.ok(defaultTokens.every((token) => token.glyph.path.includes('/autobot/')));
+  assert.ok(defaultTokens.every((token) => token.glyph.path.includes('/decepticon/')));
   assert.ok(decepticonTokens.every((token) => token.glyph.path.includes('/decepticon/')));
   assert.deepEqual(
     decepticonTokens.map((token) => token.source ?? token.value),

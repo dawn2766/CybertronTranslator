@@ -47,9 +47,8 @@ npm run preview
 ## 验证
 
 ```powershell
-npm run build
-node --test ./tests/translator.test.mjs ./tests/recognizer.test.mjs
+npm run check
 $env:BROWSER_SMOKE_COMPACT='1'
-node ./tests/browser-smoke.mjs
+npm run test:browser
 Remove-Item Env:BROWSER_SMOKE_COMPACT
 ```
