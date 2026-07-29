@@ -606,7 +606,7 @@ async function runSmoke() {
         glyphSize: getComputedStyle(document.documentElement).getPropertyValue('--glyph-size').trim(),
       };
     })()`);
-    assert.deepEqual(defaultSize, { value: '16', displayed: '16 px', glyphSize: '16px' });
+    assert.deepEqual(defaultSize, { value: '18', displayed: '18 px', glyphSize: '18px' });
 
     const viewportContract = await evaluate(cdp, sessionId, `(() => ({
       content: document.querySelector('meta[name="viewport"]')?.content,
@@ -803,14 +803,14 @@ async function runSmoke() {
         const state = {
           count: glyphs.length,
           letters: glyphs.map((glyph) => glyph.textContent.toUpperCase()).join(''),
-          loaded: document.fonts.check('16px "Cybertron Autobot"', 'CYBERTRON'),
+          loaded: document.fonts.check('18px "Cybertron Autobot"', 'CYBERTRON'),
           ariaLabels: glyphs.map((glyph) => glyph.getAttribute('aria-label')),
           imageCount: document.querySelectorAll('.glyph-token img').length,
           smallCount: document.querySelectorAll('.glyph-token small').length,
           widths: rectangles.map((rect) => rect.width),
           naturalWidths: glyphs.map((glyph) => {
             const image = referenceImages.get(glyph.textContent.toUpperCase());
-            return image.naturalWidth * 16 / image.naturalHeight;
+            return image.naturalWidth * 18 / image.naturalHeight;
           }),
           heights: rectangles.map((rect) => rect.height),
           sameLineGaps,
@@ -839,14 +839,14 @@ async function runSmoke() {
     assert.ok(new Set(conversion.widths.map((width) => width.toFixed(2))).size > 1, 'Font glyph widths must vary naturally');
     const compressionRatios = conversion.widths.map((width, index) => width / conversion.naturalWidths[index]);
     assert.ok(compressionRatios.every((ratio) => ratio >= 0.68 && ratio <= 0.74), `Unexpected font compression: ${compressionRatios}`);
-    assert.ok(conversion.heights.every((height) => Math.abs(height - 16) < 0.1));
+    assert.ok(conversion.heights.every((height) => Math.abs(height - 18) < 0.1));
     assert.ok(conversion.sameLineGaps.length > 0);
     assert.ok(conversion.sameLineGaps.every((gap) => gap >= 0 && gap <= 3), `Glyph gaps exceed 3px: ${conversion.sameLineGaps}`);
     assert.ok(conversion.styles.every((style) => style.backgroundColor === 'rgba(0, 0, 0, 0)'
       && style.borderStyle === 'none' && style.padding === '0px'));
     assert.ok(conversion.styles.every((style) => style.fontFamily.includes('Cybertron Autobot')
-      && Math.abs(Number.parseFloat(style.fontSize) - 16) < 0.1
-      && Math.abs(Number.parseFloat(style.lineHeight) - 16) < 0.1));
+      && Math.abs(Number.parseFloat(style.fontSize) - 18) < 0.1
+      && Math.abs(Number.parseFloat(style.lineHeight) - 18) < 0.1));
 
     const familySwitch = await evaluate(cdp, sessionId, `(async () => {
       const beforeWidths = [...document.querySelectorAll('.glyph-token')]
@@ -1282,7 +1282,20 @@ async function runSmoke() {
     assert.equal(reverseRecognition.copyIconHidden, false);
     assert.equal(reverseRecognition.downloadIconHidden, true);
     assert.equal(reverseRecognition.outputFontSize, '16px');
-    assert.equal(reverseRecognition.outputLineHeight, '25.6px');
+    assert.equal(reverseRecognition.outputLineHeight, '21px');
+
+    const reverseSize = await evaluate(cdp, sessionId, `(() => {
+      const slider = document.querySelector('#target-size');
+      slider.value = '37';
+      slider.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText' }));
+      const outputStyle = getComputedStyle(document.querySelector('.english-output'));
+      return {
+        displayed: document.querySelector('#target-size-value').textContent,
+        fontSize: outputStyle.fontSize,
+        lineHeight: outputStyle.lineHeight,
+      };
+    })()`);
+    assert.deepEqual(reverseSize, { displayed: '37 px', fontSize: '37px', lineHeight: '48px' });
 
     const cycledRecognition = await evaluate(cdp, sessionId, `(() => {
       document.querySelector('#direction-button').click();

@@ -38,12 +38,12 @@
   --signal-dark: #861720;
   --local: #1f7654;
   --focus: #b3232d;
-  --glyph-size: 28px;
-  --literal-size: 28px;
-  --line-size: 36px;
+  --glyph-size: 18px;
+  --literal-size: 18px;
+  --line-size: 23px;
   --glyph-gap: 1px;
-  --word-gap: 10px;
-  --punctuation-lift: 3px;
+  --word-gap: 6px;
+  --punctuation-lift: 2px;
   --cybertron-font: "Cybertron Autobot";
   --literal-font: "Bahnschrift", "Cybertron DIN Fallback", "Aptos", "Microsoft YaHei UI", sans-serif;
   font-family: "Bahnschrift", "Aptos", "Microsoft YaHei UI", sans-serif;
@@ -267,8 +267,8 @@ button:focus-visible, textarea:focus-visible, input:focus-visible, dialog:focus-
   min-height: 100%;
   color: var(--ink);
   font-family: Georgia, "Aptos", "Microsoft YaHei UI", serif;
-  font-size: 20px;
-  line-height: 1.7;
+  font-size: var(--literal-size);
+  line-height: var(--line-size);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1773,6 +1773,6 @@ dialog {
 }
 
 .english-output {
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: var(--literal-size);
+  line-height: var(--line-size);
 }

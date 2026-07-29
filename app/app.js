@@ -53,7 +53,7 @@ const sampleActionLabel = document.querySelector('#sample-action-label');
 const exportButton = document.querySelector('#export-button');
 const primaryActionIcon = document.querySelector('#primary-action-icon');
 const primaryActionLabel = document.querySelector('#primary-action-label');
-const SIZE_RANGE = Object.freeze({ min: 8, max: 52, default: 16 });
+const SIZE_RANGE = Object.freeze({ min: 8, max: 52, default: 18 });
 const EXPORT_BACKGROUND = '#fdfdfb';
 const FACTION_SAMPLE_TEXT = Object.freeze({
   decepticon: 'Peace through tyranny!\nDecepticons, transform and rise up!',
