@@ -598,6 +598,16 @@ async function runSmoke() {
     assert.equal(pageState.readyState, 'complete');
     assert.equal(pageState.referenceEntries, 26);
 
+    const defaultSize = await evaluate(cdp, sessionId, `(() => {
+      const slider = document.querySelector('#target-size');
+      return {
+        value: slider.value,
+        displayed: document.querySelector('#target-size-value').textContent,
+        glyphSize: getComputedStyle(document.documentElement).getPropertyValue('--glyph-size').trim(),
+      };
+    })()`);
+    assert.deepEqual(defaultSize, { value: '16', displayed: '16 px', glyphSize: '16px' });
+
     const viewportContract = await evaluate(cdp, sessionId, `(() => ({
       content: document.querySelector('meta[name="viewport"]')?.content,
       touchAction: getComputedStyle(document.documentElement).touchAction,
@@ -778,7 +788,7 @@ async function runSmoke() {
     })()`);
     const conversion = await waitUntil(
       () => evaluate(cdp, sessionId, `(async () => {
-        await document.fonts.load('28px "Cybertron Autobot"', 'CYBERTRON');
+        await document.fonts.load('16px "Cybertron Autobot"', 'CYBERTRON');
         const glyphs = [...document.querySelectorAll('.glyph-token')];
         const rectangles = glyphs.map((glyph) => glyph.getBoundingClientRect());
         const referenceImages = new Map([...document.querySelectorAll('.reference-item')].map((item) => [
@@ -793,14 +803,14 @@ async function runSmoke() {
         const state = {
           count: glyphs.length,
           letters: glyphs.map((glyph) => glyph.textContent.toUpperCase()).join(''),
-          loaded: document.fonts.check('28px "Cybertron Autobot"', 'CYBERTRON'),
+          loaded: document.fonts.check('16px "Cybertron Autobot"', 'CYBERTRON'),
           ariaLabels: glyphs.map((glyph) => glyph.getAttribute('aria-label')),
           imageCount: document.querySelectorAll('.glyph-token img').length,
           smallCount: document.querySelectorAll('.glyph-token small').length,
           widths: rectangles.map((rect) => rect.width),
           naturalWidths: glyphs.map((glyph) => {
             const image = referenceImages.get(glyph.textContent.toUpperCase());
-            return image.naturalWidth * 28 / image.naturalHeight;
+            return image.naturalWidth * 16 / image.naturalHeight;
           }),
           heights: rectangles.map((rect) => rect.height),
           sameLineGaps,
@@ -829,14 +839,14 @@ async function runSmoke() {
     assert.ok(new Set(conversion.widths.map((width) => width.toFixed(2))).size > 1, 'Font glyph widths must vary naturally');
     const compressionRatios = conversion.widths.map((width, index) => width / conversion.naturalWidths[index]);
     assert.ok(compressionRatios.every((ratio) => ratio >= 0.68 && ratio <= 0.74), `Unexpected font compression: ${compressionRatios}`);
-    assert.ok(conversion.heights.every((height) => Math.abs(height - 28) < 0.1));
+    assert.ok(conversion.heights.every((height) => Math.abs(height - 16) < 0.1));
     assert.ok(conversion.sameLineGaps.length > 0);
     assert.ok(conversion.sameLineGaps.every((gap) => gap >= 0 && gap <= 3), `Glyph gaps exceed 3px: ${conversion.sameLineGaps}`);
     assert.ok(conversion.styles.every((style) => style.backgroundColor === 'rgba(0, 0, 0, 0)'
       && style.borderStyle === 'none' && style.padding === '0px'));
     assert.ok(conversion.styles.every((style) => style.fontFamily.includes('Cybertron Autobot')
-      && Math.abs(Number.parseFloat(style.fontSize) - 28) < 0.1
-      && Math.abs(Number.parseFloat(style.lineHeight) - 28) < 0.1));
+      && Math.abs(Number.parseFloat(style.fontSize) - 16) < 0.1
+      && Math.abs(Number.parseFloat(style.lineHeight) - 16) < 0.1));
 
     const familySwitch = await evaluate(cdp, sessionId, `(async () => {
       const beforeWidths = [...document.querySelectorAll('.glyph-token')]
@@ -844,14 +854,14 @@ async function runSmoke() {
       const radio = document.querySelector('input[value="decepticon"]');
       radio.checked = true;
       radio.dispatchEvent(new Event('change', { bubbles: true }));
-      await document.fonts.load('28px "Cybertron Decepticon"', 'CYBERTRON');
+      await document.fonts.load('16px "Cybertron Decepticon"', 'CYBERTRON');
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const glyphs = [...document.querySelectorAll('.glyph-token')];
       return {
         checked: radio.checked,
         familyLabel: document.querySelector('#target-family-label').textContent,
         referenceTitle: document.querySelector('#reference-title').textContent,
-        fontLoaded: document.fonts.check('28px "Cybertron Decepticon"', 'CYBERTRON'),
+        fontLoaded: document.fonts.check('16px "Cybertron Decepticon"', 'CYBERTRON'),
         fontFamilies: [...new Set(glyphs.map((glyph) => getComputedStyle(glyph).fontFamily))],
         ariaLabels: glyphs.map((glyph) => glyph.getAttribute('aria-label')),
         beforeWidths,
@@ -997,7 +1007,7 @@ async function runSmoke() {
     const sampleSource = 'Peace through tyranny!\nDecepticons, transform and rise up!';
     const exportSource = '“Hello,” we\'re\nhere.';
     const sizeEvidence = [];
-    for (const size of [16, 28, 52]) {
+    for (const size of [8, 28, 52]) {
       const evidence = await evaluate(cdp, sessionId, `(async () => {
         const slider = document.querySelector('#target-size');
         slider.value = '${size}';
@@ -1075,9 +1085,9 @@ async function runSmoke() {
     assert.ok(sample.literalMetrics.every((literal) => literal.backgroundColor === 'rgba(0, 0, 0, 0)'
       && literal.borderStyle === 'none' && literal.boxShadow === 'none' && literal.padding === '0px'));
 
-    for (const [index, size] of [16, 28, 52].entries()) {
+    for (const [index, size] of [8, 28, 52].entries()) {
       const evidence = sizeEvidence[index];
-      assert.deepEqual(evidence.slider, { min: '16', max: '52', step: '1', value: String(size) });
+      assert.deepEqual(evidence.slider, { min: '8', max: '52', step: '1', value: String(size) });
       assert.equal(evidence.sizeValue, `${size} px`);
       assert.equal(evidence.tokenOrder, sampleSource);
       assert.ok(evidence.glyphHeights.every((height) => Math.abs(height - size) < 0.1));
@@ -1133,6 +1143,9 @@ async function runSmoke() {
         window.__browserSmokeBlobObject = blob;
         return createObjectURL(blob);
       };
+      const slider = document.querySelector('#target-size');
+      slider.value = '16';
+      slider.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText' }));
       const input = document.querySelector('#source-input');
       input.value = '“Hello,” we\\'re\\nhere.';
       input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
@@ -1169,16 +1182,16 @@ async function runSmoke() {
       strokeRects: window.__browserSmokeStrokeRects,
     })`);
     assert.equal(exportLayout.layout.tokenOrder, exportSource);
-    assert.equal(exportLayout.layout.selectedSize, 52);
-    assert.equal(exportLayout.layout.glyphHeight, 52);
-    assert.equal(exportLayout.layout.literalSize, 52);
-    assert.equal(exportLayout.layout.literalFont.startsWith('52px '), true);
+    assert.equal(exportLayout.layout.selectedSize, 16);
+    assert.equal(exportLayout.layout.glyphHeight, 16);
+    assert.equal(exportLayout.layout.literalSize, 16);
+    assert.equal(exportLayout.layout.literalFont.startsWith('16px '), true);
     assert.equal(exportLayout.layout.alphabetId, 'decepticon');
-    assert.equal(exportLayout.layout.glyphFont, '52px "Cybertron Decepticon"');
-    assert.equal(exportLayout.layout.glyphGap, 2);
-    assert.equal(exportLayout.layout.wordGap, 18);
-    assert.equal(exportLayout.layout.punctuationLift, 5);
-    assert.equal(exportLayout.layout.lineHeight, 68);
+    assert.equal(exportLayout.layout.glyphFont, '16px "Cybertron Decepticon"');
+    assert.equal(exportLayout.layout.glyphGap, 1);
+    assert.equal(exportLayout.layout.wordGap, 6);
+    assert.equal(exportLayout.layout.punctuationLift, 2);
+    assert.equal(exportLayout.layout.lineHeight, 21);
     assert.equal(exportLayout.layout.background, '#fdfdfb');
     assert.equal(exportLayout.layout.recognitionMarker, 'CYIMG1');
     assert.equal(exportLayout.layout.entries.filter((entry) => entry.type === 'glyph').length, 13);
@@ -1244,10 +1257,10 @@ async function runSmoke() {
     );
     assert.equal(reverseRecognition.source, 'verified-marker');
     assert.equal(reverseRecognition.rawText, exportSource);
-    assert.equal(reverseRecognition.text, '“Hello,” we\'re\nhere.');
+    assert.equal(reverseRecognition.text, '“Hello,” we\'re\nHere.');
     assert.equal(reverseRecognition.output, reverseRecognition.text);
     assert.equal(reverseRecognition.lineCount, 2);
-    assert.equal(reverseRecognition.size, 52);
+    assert.equal(reverseRecognition.size, 16);
     assert.equal(reverseRecognition.confidence, 1);
     assert.equal(reverseRecognition.uncertainCount, 0);
     assert.equal(reverseRecognition.status, '已精确恢复 18 个字符，校验通过');
@@ -1268,8 +1281,19 @@ async function runSmoke() {
     assert.equal(reverseRecognition.visibleActionIcons, 4);
     assert.equal(reverseRecognition.copyIconHidden, false);
     assert.equal(reverseRecognition.downloadIconHidden, true);
-    assert.equal(reverseRecognition.outputFontSize, '52px');
-    assert.equal(reverseRecognition.outputLineHeight, '68px');
+    assert.equal(reverseRecognition.outputFontSize, '16px');
+    assert.equal(reverseRecognition.outputLineHeight, '25.6px');
+
+    const cycledRecognition = await evaluate(cdp, sessionId, `(() => {
+      document.querySelector('#direction-button').click();
+      document.querySelector('#direction-button').click();
+      return {
+        direction: document.documentElement.dataset.direction,
+        output: document.querySelector('.english-output')?.textContent,
+      };
+    })()`);
+    assert.equal(cycledRecognition.direction, 'cybertron-to-english');
+    assert.equal(cycledRecognition.output, reverseRecognition.text);
 
     await evaluate(cdp, sessionId, `document.querySelector('#sample-button').click()`);
     const decepticonSample = await waitUntil(

@@ -577,6 +577,7 @@ dialog::backdrop { background: rgba(17, 19, 19, 0.62); }
 html {
   background: var(--system-chrome);
   scrollbar-color: #68747a #0a0d0f;
+  min-height: 100%;
 }
 
 body {
@@ -589,6 +590,10 @@ body {
     linear-gradient(115deg, rgba(5, 7, 9, 0.72) 0%, rgba(5, 8, 10, 0.38) 42%, rgba(11, 14, 16, 0.62) 100%),
     #060809;
   overflow-x: hidden;
+}
+
+@supports (min-height: 100dvh) {
+  body, .app-shell { min-height: 100dvh; }
 }
 
 body::before,
@@ -849,6 +854,24 @@ body::after {
   border-color: #647075;
   clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%);
   transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.language-direction,
+.language-direction > span {
+  display: grid;
+  place-items: center;
+}
+
+.language-direction > span {
+  width: 22px;
+  height: 22px;
+  line-height: 0;
+}
+
+.direction-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
 .language-direction:hover {
@@ -1513,16 +1536,16 @@ dialog {
 
 @media (max-width: 760px) {
   :root {
-    --mobile-source-height: clamp(202px, calc(46dvh - 129px), 300px);
-    --mobile-target-height: clamp(238px, calc(54dvh - 151px), 350px);
+    --mobile-surface-height: clamp(160px, calc((100dvh - 270px) / 2), 216px);
   }
 
-  .source-pane,
-  #source-input,
-  .recognition-panel { min-height: var(--mobile-source-height); }
+  .app-shell { min-height: 0; }
 
+  .source-pane,
   .target-pane,
-  .output-stage { min-height: var(--mobile-target-height); }
+  #source-input,
+  .output-stage,
+  .recognition-panel { min-height: var(--mobile-surface-height); }
 
   .source-pane::before {
     background-position: 82% 54%;
@@ -1558,8 +1581,7 @@ dialog {
 
 @media (max-width: 380px), (max-height: 700px) {
   :root {
-    --mobile-source-height: 190px;
-    --mobile-target-height: 226px;
+    --mobile-surface-height: 190px;
   }
 }
 
@@ -1751,6 +1773,6 @@ dialog {
 }
 
 .english-output {
-  font-size: var(--literal-size);
-  line-height: var(--line-size);
+  font-size: 16px;
+  line-height: 1.6;
 }

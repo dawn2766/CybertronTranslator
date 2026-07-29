@@ -1,4 +1,4 @@
-const SIZE_RANGE = Object.freeze({ min: 16, max: 52 });
+const SIZE_RANGE = Object.freeze({ min: 8, max: 52 });
 const EXPORT_PADDING = 32;
 const EXPORT_MIN_HEIGHT = 120;
 const NORMALIZED_BACKGROUND = '#fdfdfb';
@@ -547,7 +547,7 @@ export function formatRecognizedEnglish(value) {
       capitalizeNext = false;
       return normalized;
     }
-    if (/[.!?]/.test(character)) capitalizeNext = true;
+    if (/[.!?\n]/.test(character)) capitalizeNext = true;
     return character;
   }).join('');
   return text;

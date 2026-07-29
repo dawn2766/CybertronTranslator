@@ -53,7 +53,7 @@ const sampleActionLabel = document.querySelector('#sample-action-label');
 const exportButton = document.querySelector('#export-button');
 const primaryActionIcon = document.querySelector('#primary-action-icon');
 const primaryActionLabel = document.querySelector('#primary-action-label');
-const SIZE_RANGE = Object.freeze({ min: 16, max: 52, default: 28 });
+const SIZE_RANGE = Object.freeze({ min: 8, max: 52, default: 16 });
 const EXPORT_BACKGROUND = '#fdfdfb';
 const FACTION_SAMPLE_TEXT = Object.freeze({
   decepticon: 'Peace through tyranny!\nDecepticons, transform and rise up!',
@@ -320,7 +320,11 @@ function updatePreview() {
   const forward = isEnglishToCybertron();
   if (!forward) {
     currentTokens = [];
-    if (!currentRecognition) renderRecognitionEmpty();
+    if (currentRecognition) {
+      renderEnglish(currentRecognition.text);
+    } else {
+      renderRecognitionEmpty();
+    }
     return;
   }
   currentTokens = tokenizeInput(input.value, getCurrentAlphabet().manifest);
