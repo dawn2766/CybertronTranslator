@@ -838,7 +838,7 @@ async function runSmoke() {
     assert.ok(conversion.ariaLabels.every((label) => /^汽车人 AUTOBOT [A-Z] 字形$/.test(label)));
     assert.ok(new Set(conversion.widths.map((width) => width.toFixed(2))).size > 1, 'Font glyph widths must vary naturally');
     const compressionRatios = conversion.widths.map((width, index) => width / conversion.naturalWidths[index]);
-    assert.ok(compressionRatios.every((ratio) => ratio >= 0.68 && ratio <= 0.74), `Unexpected font compression: ${compressionRatios}`);
+    assert.ok(compressionRatios.every((ratio) => ratio >= 0.86 && ratio <= 0.92), `Unexpected font compression: ${compressionRatios}`);
     assert.ok(conversion.heights.every((height) => Math.abs(height - 18) < 0.1));
     assert.ok(conversion.sameLineGaps.length > 0);
     assert.ok(conversion.sameLineGaps.every((gap) => gap >= 0 && gap <= 3), `Glyph gaps exceed 3px: ${conversion.sameLineGaps}`);
